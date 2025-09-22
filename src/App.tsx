@@ -7,6 +7,12 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
+import Dashboard from "./pages/Dashboard";
+import Trips from "./pages/Trips";
+import Maps from "./pages/Maps";
+import Emergency from "./pages/Emergency";
+import Profile from "./pages/Profile";
+import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +28,12 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/trips" element={<Trips />} />
+            <Route path="/maps" element={<Maps />} />
+            <Route path="/emergency" element={<Emergency />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/notifications" element={<Notifications />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

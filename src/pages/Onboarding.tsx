@@ -48,6 +48,7 @@ const Onboarding = () => {
     if (currentStep < onboardingSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
+      localStorage.setItem("hasSeenOnboarding", "true");
       navigate("/auth");
     }
   };
@@ -59,6 +60,7 @@ const Onboarding = () => {
   };
 
   const handleSkip = () => {
+    localStorage.setItem("hasSeenOnboarding", "true");
     navigate("/auth");
   };
 

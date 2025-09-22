@@ -11,6 +11,12 @@ const Index = () => {
   const { user, loading } = useAuth();
 
   useEffect(() => {
+    // If user is authenticated, redirect to dashboard
+    if (user) {
+      navigate("/dashboard");
+      return;
+    }
+
     // Check if user has seen onboarding
     const hasSeenOnboarding = localStorage.getItem("hasSeenOnboarding");
     
@@ -25,6 +31,11 @@ const Index = () => {
         <Loading size="lg" />
       </div>
     );
+  }
+
+  // If user is authenticated, this component shouldn't render (will redirect above)
+  if (user) {
+    return null;
   }
 
   const features = [
@@ -68,12 +79,7 @@ const Index = () => {
           </div>
           
           <div className="flex items-center space-x-2">
-            {user ? (
-              <Button onClick={() => navigate("/dashboard")} className="bg-gradient-to-r from-primary to-primary-glow">
-                Dashboard
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            ) : (
+            {!user && (
               <>
                 <Button variant="ghost" onClick={() => navigate("/auth")}>
                   Sign In
@@ -101,7 +107,6 @@ const Index = () => {
             Plan, book, and navigate your journeys with intelligent assistance, offline capabilities, 
             and comprehensive safety features—all in one beautiful app.
           </p>
-          
           {!user && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -115,7 +120,10 @@ const Index = () => {
               <Button 
                 size="lg" 
                 variant="outline" 
-                onClick={() => navigate("/onboarding")}
+                onClick={() => {
+                  localStorage.removeItem("hasSeenOnboarding");
+                  navigate("/onboarding");
+                }}
                 className="h-12 px-8"
               >
                 Learn More
