@@ -1,11 +1,18 @@
+import { useState } from "react";
 import Header from "@/components/navigation/Header";
 import BottomNav from "@/components/navigation/BottomNav";
 import SOSButton from "@/components/emergency/SOSButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, MapPin } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Calendar, MapPin, FileText, Plane } from "lucide-react";
+import BookingHub from "@/components/bookings/BookingHub";
+import TripTimeline from "@/components/trips/TripTimeline";
+import TripDocuments from "@/components/trips/TripDocuments";
 
 const Trips = () => {
+  const [activeTab, setActiveTab] = useState("overview");
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 pb-20">
       <Header title="My Trips" />
@@ -24,22 +31,35 @@ const Trips = () => {
             </Button>
           </div>
 
-          {/* Empty State */}
-          <Card className="border-0 shadow-lg bg-card/80 backdrop-blur">
-            <CardContent className="text-center py-16">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-primary to-primary-glow rounded-2xl flex items-center justify-center">
-                <Calendar className="w-8 h-8 text-primary-foreground" />
-              </div>
-              <CardTitle className="mb-2">No trips planned yet</CardTitle>
-              <CardDescription className="mb-6 max-w-md mx-auto">
-                Start planning your next adventure! Use our AI assistant to create personalized itineraries.
-              </CardDescription>
-              <Button className="bg-gradient-to-r from-primary to-primary-glow">
-                <MapPin className="w-4 h-4 mr-2" />
-                Plan Your First Trip
-              </Button>
-            </CardContent>
-          </Card>
+          {/* Main Content Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid grid-cols-3 w-full h-12 bg-card/50 backdrop-blur">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-glow data-[state=active]:text-primary-foreground">
+                <Calendar className="w-4 h-4 mr-2" />
+                Trip Timeline
+              </TabsTrigger>
+              <TabsTrigger value="bookings" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-glow data-[state=active]:text-primary-foreground">
+                <Plane className="w-4 h-4 mr-2" />
+                Book Travel
+              </TabsTrigger>
+              <TabsTrigger value="documents" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-glow data-[state=active]:text-primary-foreground">
+                <FileText className="w-4 h-4 mr-2" />
+                Documents
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-0">
+              <TripTimeline />
+            </TabsContent>
+
+            <TabsContent value="bookings" className="space-y-0">
+              <BookingHub />
+            </TabsContent>
+
+            <TabsContent value="documents" className="space-y-0">
+              <TripDocuments />
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
 
