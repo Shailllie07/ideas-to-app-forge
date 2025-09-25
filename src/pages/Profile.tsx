@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Users, Heart } from "lucide-react";
 import UserProfile from "@/components/profile/UserProfile";
 import EmergencyContactsManager from "@/components/profile/EmergencyContactsManager";
+import MedicalProfile from "@/components/profile/MedicalProfile";
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("profile");
@@ -46,15 +47,7 @@ const Profile = () => {
             </TabsContent>
 
             <TabsContent value="medical" className="space-y-0">
-              <div className="text-center py-16">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center">
-                  <Heart className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <h3 className="font-medium mb-2">Medical Information</h3>
-                <p className="text-sm text-muted-foreground">
-                  Coming soon - Manage your medical information and allergies
-                </p>
-              </div>
+              <MedicalProfile />
             </TabsContent>
           </Tabs>
         </div>

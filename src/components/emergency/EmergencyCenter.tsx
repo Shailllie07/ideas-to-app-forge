@@ -2,8 +2,18 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { AlertTriangle, Phone, MapPin, Heart, Shield, Users, CheckCircle, Clock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Shield, 
+  Phone, 
+  MapPin, 
+  Users, 
+  Heart, 
+  AlertTriangle,
+  CheckCircle,
+  Share2
+} from "lucide-react";
+import HospitalLocator from "./HospitalLocator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -141,250 +151,196 @@ const EmergencyCenter = () => {
 
   return (
     <div className="space-y-6">
-      {/* SOS Status */}
-      {sosActive && (
-        <Card className="border-destructive bg-destructive/10">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-destructive rounded-full flex items-center justify-center animate-pulse">
-                  <AlertTriangle className="w-6 h-6 text-destructive-foreground" />
+      {/* Emergency Status Card */}
+      <Card className="border-0 shadow-lg bg-card/80 backdrop-blur">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-accent/20 rounded-full">
+                <CheckCircle className="w-6 h-6 text-accent" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Safety Status</h3>
+                <p className="text-sm text-muted-foreground">All systems operational</p>
+              </div>
+            </div>
+            <Badge variant="secondary" className="bg-accent/20 text-accent">
+              Safe
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Emergency Tabs */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid grid-cols-3 w-full h-12 bg-card/50 backdrop-blur">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-glow data-[state=active]:text-primary-foreground">
+            <Shield className="w-4 h-4 mr-2" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="hospitals" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-glow data-[state=active]:text-primary-foreground">
+            <MapPin className="w-4 h-4 mr-2" />
+            Hospitals
+          </TabsTrigger>
+          <TabsTrigger value="contacts" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary-glow data-[state=active]:text-primary-foreground">
+            <Users className="w-4 h-4 mr-2" />
+            Contacts
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="border-0 shadow-lg bg-card/80 backdrop-blur hover:shadow-xl transition-all cursor-pointer">
+              <CardContent className="p-6">
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 mx-auto bg-gradient-to-r from-destructive/20 to-destructive/30 rounded-2xl flex items-center justify-center">
+                    <Phone className="w-6 h-6 text-destructive" />
+                  </div>
+                  <h3 className="font-semibold">Emergency Contacts</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Quick access to your emergency contacts and medical information
+                  </p>
+                  <Button variant="outline" size="sm" className="w-full">
+                    View Contacts
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg bg-card/80 backdrop-blur hover:shadow-xl transition-all cursor-pointer">
+              <CardContent className="p-6">
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 mx-auto bg-gradient-to-r from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center">
+                    <MapPin className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold">Nearest Hospitals</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Find and navigate to the closest medical facilities
+                  </p>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Find Hospitals
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Location Sharing */}
+          <Card className="border-0 shadow-lg bg-card/80 backdrop-blur">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Share2 className="w-5 h-5" />
+                Location Sharing
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">Share Location with Emergency Contacts</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Allow emergency contacts to see your current location
+                  </p>
+                </div>
+                <Badge variant="outline">Disabled</Badge>
+              </div>
+              <Button variant="outline" className="w-full">
+                Enable Location Sharing
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Emergency Information */}
+          <Card className="border-0 shadow-lg bg-card/80 backdrop-blur">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-orange-500" />
+                Emergency Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Emergency Numbers
+                  </h4>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>Police:</span>
+                      <span className="font-mono">112</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Ambulance:</span>
+                      <span className="font-mono">108</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Fire:</span>
+                      <span className="font-mono">101</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Heart className="w-4 h-4" />
+                    Medical Info
+                  </h4>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p>Blood Type: Not set</p>
+                    <p>Allergies: None recorded</p>
+                    <Button variant="ghost" size="sm" className="p-0 h-auto text-primary">
+                      Add Medical Information
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* I'm Safe Button */}
+          <Card className="border-0 shadow-lg bg-card/80 backdrop-blur">
+            <CardContent className="p-6">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-r from-accent/20 to-accent/30 rounded-2xl flex items-center justify-center">
+                  <CheckCircle className="w-8 h-8 text-accent" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-destructive">SOS ACTIVE</h3>
-                  <p className="text-sm text-muted-foreground">Emergency services and contacts have been alerted</p>
+                  <h3 className="font-semibold">Send Safety Update</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Let your emergency contacts know you're safe
+                  </p>
                 </div>
+                <Button className="w-full bg-gradient-to-r from-accent to-accent/90">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  I'm Safe - Notify Contacts
+                </Button>
               </div>
-              <Button variant="outline" onClick={deactivateSOS}>
-                Cancel Alert
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Emergency Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* SOS Button */}
-        <Card className="border-0 shadow-lg bg-card/80 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-5 h-5" />
-              Emergency SOS
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Instantly alert your emergency contacts and share your location
-            </p>
-            <Button
-              onClick={triggerSOS}
-              disabled={sosActive}
-              className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground h-16 text-lg font-bold"
-            >
-              <AlertTriangle className="w-6 h-6 mr-2" />
-              {sosActive ? "SOS ACTIVE" : "EMERGENCY SOS"}
-            </Button>
-          </CardContent>
-        </Card>
+        <TabsContent value="hospitals">
+          <HospitalLocator />
+        </TabsContent>
 
-        {/* Location Sharing */}
-        <Card className="border-0 shadow-lg bg-card/80 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
-              Location Sharing
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Badge variant={locationShared ? "default" : "secondary"}>
-                {locationShared ? (
-                  <>
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    Location Shared
-                  </>
-                ) : (
-                  <>
-                    <Clock className="w-3 h-3 mr-1" />
-                    Not Shared
-                  </>
-                )}
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Share your real-time location with emergency contacts
-            </p>
-            <Button
-              onClick={shareLocation}
-              disabled={locationShared}
-              variant="outline"
-              className="w-full"
-            >
-              <MapPin className="w-4 h-4 mr-2" />
-              {locationShared ? "Location Shared" : "Share Location"}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Emergency Contacts */}
-      <Card className="border-0 shadow-lg bg-card/80 backdrop-blur">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Emergency Contacts
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {emergencyContacts.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center">
-                <Users className="w-8 h-8 text-muted-foreground" />
+        <TabsContent value="contacts">
+          <Card className="border-0 shadow-lg bg-card/80 backdrop-blur">
+            <CardContent className="p-6">
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="font-medium mb-2">Emergency Contacts</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Manage your emergency contacts in the Profile section
+                </p>
+                <Button variant="outline">
+                  Go to Profile
+                </Button>
               </div>
-              <h3 className="font-medium mb-2">No emergency contacts</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Add trusted contacts who can help in emergencies
-              </p>
-              <Button variant="outline">Add Emergency Contact</Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {emergencyContacts.map((contact) => (
-                <div key={contact.id} className="flex items-center justify-between p-4 border border-border/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-primary to-primary-glow rounded-full flex items-center justify-center text-primary-foreground font-bold">
-                      {contact.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium">{contact.name}</h4>
-                        {contact.is_primary && (
-                          <Badge variant="default">Primary</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{contact.relationship}</p>
-                      <p className="text-sm font-mono">{contact.phone_number}</p>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={() => callEmergencyContact(contact)}
-                    className="bg-gradient-to-r from-accent to-accent/80"
-                  >
-                    <Phone className="w-4 h-4 mr-2" />
-                    Call
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Nearby Hospitals */}
-      <Card className="border-0 shadow-lg bg-card/80 backdrop-blur">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Heart className="w-5 h-5" />
-            Nearest Hospitals
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {nearbyHospitals.map((hospital) => (
-              <div key={hospital.id} className="p-4 border border-border/50 rounded-lg space-y-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className="font-bold">{hospital.name}</h4>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                      <MapPin className="w-3 h-3" />
-                      {hospital.address}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="outline">{hospital.distance} away</Badge>
-                      <Badge variant="secondary">★ {hospital.rating}</Badge>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex flex-wrap gap-2">
-                  {hospital.specialty.map((spec) => (
-                    <Badge key={spec} variant="outline" className="text-xs">
-                      {spec}
-                    </Badge>
-                  ))}
-                </div>
-                
-                <Separator />
-                
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={() => callHospital(hospital)}
-                    className="flex-1 bg-destructive hover:bg-destructive/90"
-                  >
-                    <Phone className="w-4 h-4 mr-2" />
-                    Call Hospital
-                  </Button>
-                  <Button
-                    onClick={() => getDirections(hospital)}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Directions
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Emergency Services */}
-      <Card className="border-0 shadow-lg bg-card/80 backdrop-blur">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            Emergency Services
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button
-              onClick={() => window.open('tel:100', '_self')}
-              className="h-16 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-            >
-              <div className="text-center">
-                <Phone className="w-6 h-6 mx-auto mb-1" />
-                <div className="font-bold">Police</div>
-                <div className="text-sm">100</div>
-              </div>
-            </Button>
-            
-            <Button
-              onClick={() => window.open('tel:101', '_self')}
-              className="h-16 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-            >
-              <div className="text-center">
-                <Phone className="w-6 h-6 mx-auto mb-1" />
-                <div className="font-bold">Fire</div>
-                <div className="text-sm">101</div>
-              </div>
-            </Button>
-            
-            <Button
-              onClick={() => window.open('tel:108', '_self')}
-              className="h-16 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-            >
-              <div className="text-center">
-                <Phone className="w-6 h-6 mx-auto mb-1" />
-                <div className="font-bold">Ambulance</div>
-                <div className="text-sm">108</div>
-              </div>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
