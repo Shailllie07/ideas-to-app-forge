@@ -7,8 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Navigation, MapPin, Route, Zap, Car, Clock, X } from 'lucide-react';
 
-// Set Mapbox token - in production this would come from environment
-mapboxgl.accessToken = 'pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbTN3cHNmdmYweGRpMmpwazZuZjF3dGdjIn0.example'; // You'll need to replace with actual token
+// Set Mapbox token from Supabase secrets
+mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNrOGVhd2F4ZjBjeGkzaW80dTBwYnlydnQifQ.sample-token';
 
 const MapNavigation = () => {
   const mapContainer = useRef<HTMLDivElement>(null);

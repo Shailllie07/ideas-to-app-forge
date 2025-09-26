@@ -6,12 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Map, Download, Navigation } from "lucide-react";
 import OfflineMapsList from "@/components/maps/OfflineMapsList";
 import MapNavigation from "@/components/maps/MapNavigation";
+import MapboxConfig from "@/components/maps/MapboxConfig";
 
 const Maps = () => {
   const [activeTab, setActiveTab] = useState("navigation");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 pb-20">
+      <MapboxConfig />
       <Header title="Maps & Navigation" />
       
       <main className="max-w-screen-xl mx-auto px-4 py-6">
