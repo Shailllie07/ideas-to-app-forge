@@ -1,5 +1,4 @@
 import { useAuthContext } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
 import { Loading } from "@/components/ui/loading";
 import Header from "@/components/navigation/Header";
 import BottomNav from "@/components/navigation/BottomNav";
@@ -9,7 +8,6 @@ import WeatherWidget from "@/components/widgets/WeatherWidget";
 import QuickActionCards from "@/components/home/QuickActionCards";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const Dashboard = () => {
   const { user, loading } = useAuthContext();
@@ -21,8 +19,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
-  // Protected route handles authentication check
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 pb-20">
