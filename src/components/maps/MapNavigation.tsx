@@ -6,9 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Navigation, MapPin, Route, Zap, Car, Clock, X } from 'lucide-react';
-
-// Set Mapbox token from Supabase secrets
-mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNrOGVhd2F4ZjBjeGkzaW80dTBwYnlydnQifQ.sample-token';
+import MapTokenManager from './MapTokenManager';
 
 const MapNavigation = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -16,6 +14,7 @@ const MapNavigation = () => {
   const [destination, setDestination] = useState("");
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isTokenReady, setIsTokenReady] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{
     distance: string;
     duration: string;
@@ -23,7 +22,7 @@ const MapNavigation = () => {
   } | null>(null);
 
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || !isTokenReady) return;
 
     // Initialize map
     map.current = new mapboxgl.Map({
@@ -62,7 +61,7 @@ const MapNavigation = () => {
     return () => {
       map.current?.remove();
     };
-  }, []);
+  }, [isTokenReady]);
 
   const searchDestination = async () => {
     if (!destination.trim()) return;
@@ -115,6 +114,12 @@ const MapNavigation = () => {
 
   return (
     <div className="relative h-full">
+      {!isTokenReady && (
+        <div className="absolute inset-0 z-20 bg-background/95 backdrop-blur flex items-center justify-center p-4">
+          <MapTokenManager onTokenSet={() => setIsTokenReady(true)} />
+        </div>
+      )}
+      
       {/* Map Container */}
       <div ref={mapContainer} className="absolute inset-0 rounded-lg" />
       

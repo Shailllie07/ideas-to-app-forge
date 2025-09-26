@@ -32,12 +32,56 @@ const OfflineMapsList = () => {
   const { toast } = useToast();
 
   const availableRegions = [
-    { name: "Mumbai", bounds: [72.7757, 18.8951, 72.9781, 19.2762] },
+    // Northern States
+    { name: "Jammu and Kashmir", bounds: [73.2712, 32.2190, 80.3066, 37.1210] },
+    { name: "Ladakh", bounds: [75.2411, 32.2920, 80.1066, 36.4010] },
+    { name: "Himachal Pradesh", bounds: [75.4735, 30.3811, 79.0422, 33.2736] },
+    { name: "Punjab", bounds: [73.5510, 29.3817, 76.9316, 32.6946] },
+    { name: "Haryana", bounds: [74.3441, 27.6440, 77.3910, 30.9353] },
     { name: "Delhi", bounds: [76.8388, 28.4041, 77.3462, 28.8833] },
-    { name: "Bangalore", bounds: [77.4601, 12.8340, 77.7840, 13.1404] },
+    { name: "Uttarakhand", bounds: [77.3450, 28.4346, 81.0312, 31.4504] },
+    { name: "Uttar Pradesh", bounds: [77.0513, 23.8346, 84.6353, 30.4227] },
+    
+    // Western States
+    { name: "Rajasthan", bounds: [69.0290, 23.0395, 78.2690, 30.0668] },
+    { name: "Gujarat", bounds: [68.1623, 20.0633, 74.4977, 24.7081] },
+    { name: "Maharashtra", bounds: [72.6589, 15.6017, 80.8913, 22.0273] },
     { name: "Goa", bounds: [73.6813, 15.0986, 74.3012, 15.8050] },
+    
+    // Central States
+    { name: "Madhya Pradesh", bounds: [74.0260, 21.0787, 82.7985, 26.8787] },
+    { name: "Chhattisgarh", bounds: [80.2707, 17.7800, 84.7633, 24.0833] },
+    
+    // Eastern States
+    { name: "Bihar", bounds: [83.3250, 24.2043, 88.2176, 27.5206] },
+    { name: "Jharkhand", bounds: [83.3250, 21.9509, 87.5794, 25.3172] },
+    { name: "West Bengal", bounds: [85.8177, 21.4560, 89.9120, 27.2316] },
+    { name: "Odisha", bounds: [81.3270, 17.7800, 87.5333, 22.5667] },
+    
+    // Northeastern States
+    { name: "Assam", bounds: [89.6380, 24.1270, 96.0258, 28.2180] },
+    { name: "Arunachal Pradesh", bounds: [91.6080, 26.6330, 97.4093, 29.4500] },
+    { name: "Nagaland", bounds: [93.3257, 25.2044, 95.7739, 27.0444] },
+    { name: "Manipur", bounds: [93.0313, 23.8372, 94.7858, 25.6831] },
+    { name: "Mizoram", bounds: [92.1544, 21.9471, 93.3906, 24.5311] },
+    { name: "Tripura", bounds: [91.0985, 22.9569, 92.6739, 24.5325] },
+    { name: "Meghalaya", bounds: [89.8336, 25.0070, 92.7985, 26.1146] },
+    { name: "Sikkim", bounds: [88.0626, 27.0440, 88.9068, 28.1356] },
+    
+    // Southern States
+    { name: "Karnataka", bounds: [74.0894, 11.5945, 78.5885, 18.4574] },
     { name: "Kerala", bounds: [74.8520, 8.2972, 77.4168, 12.7800] },
-    { name: "Rajasthan", bounds: [69.0290, 23.0395, 78.2690, 30.0668] }
+    { name: "Tamil Nadu", bounds: [76.2297, 8.0883, 80.3436, 13.5608] },
+    { name: "Andhra Pradesh", bounds: [76.7549, 12.6200, 84.7750, 19.9078] },
+    { name: "Telangana", bounds: [77.2749, 15.7942, 81.7749, 19.9178] },
+    
+    // Union Territories & Special Regions
+    { name: "Andaman and Nicobar Islands", bounds: [92.2336, 6.7450, 94.2613, 13.6830] },
+    { name: "Lakshadweep", bounds: [71.6167, 8.0000, 74.1333, 12.3833] },
+    { name: "Puducherry", bounds: [79.6325, 11.7401, 79.8874, 12.0700] },
+    { name: "Chandigarh", bounds: [76.6574, 30.6315, 76.8600, 30.7594] },
+    { name: "Dadra and Nagar Haveli", bounds: [72.8380, 20.0711, 73.1380, 20.4311] },
+    { name: "Daman and Diu", bounds: [72.7833, 20.3833, 72.9000, 20.4333] }
   ];
 
   useEffect(() => {
