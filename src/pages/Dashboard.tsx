@@ -8,9 +8,16 @@ import WeatherWidget from "@/components/widgets/WeatherWidget";
 import QuickActionCards from "@/components/home/QuickActionCards";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSecurity } from "@/hooks/useSecurity";
 
 const Dashboard = () => {
   const { user, loading } = useAuthContext();
+  
+  // Initialize security monitoring
+  const { updateLastActivity } = useSecurity({
+    maxInactiveTime: 2 * 60 * 60 * 1000, // 2 hours for dashboard
+    sessionCheckInterval: 2 * 60 * 1000, // Check every 2 minutes
+  });
 
   if (loading) {
     return (
@@ -21,7 +28,11 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 pb-20">
+    <div 
+      className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 pb-20"
+      onClick={updateLastActivity}
+      onKeyDown={updateLastActivity}
+    >
       <Header />
       
       <main className="max-w-screen-xl mx-auto px-4 py-6">

@@ -53,15 +53,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
+        console.log('Auth state change:', event, session?.user?.id);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile when user logs in
-          await fetchUserProfile(session.user.id);
+          // Defer profile fetch to prevent multiple renders
+          setTimeout(async () => {
+            if (mounted) {
+              await fetchUserProfile(session.user.id);
+            }
+          }, 0);
         } else {
           setProfile(null);
         }
@@ -76,6 +86,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
         
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -84,19 +96,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
-        toast({
-          title: "Authentication Error",
-          description: "Failed to initialize authentication. Please refresh the page.",
-          variant: "destructive",
-        });
+        if (mounted) {
+          toast({
+            title: "Authentication Error",
+            description: "Failed to initialize authentication. Please refresh the page.",
+            variant: "destructive",
+          });
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     initializeAuth();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (userId: string) => {

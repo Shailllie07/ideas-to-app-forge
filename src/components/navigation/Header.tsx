@@ -6,7 +6,8 @@ import {
   Menu,
   Settings,
   Plane,
-  LogOut
+  LogOut,
+  ShieldCheck
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -97,16 +98,23 @@ const Header = ({
                 <Menu className="w-5 h-5" />
               </Button>
             ) : (
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary-glow rounded-lg flex items-center justify-center">
-                  <Plane className="w-4 h-4 text-primary-foreground" />
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary-glow rounded-lg flex items-center justify-center">
+                    <Plane className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                      JourneyXWave
+                    </span>
+                  </div>
+                  {/* Security Status Indicator */}
+                  <div className="flex items-center space-x-1">
+                    <ShieldCheck className="h-3 w-3 text-green-500" />
+                    <Badge variant="outline" className="text-xs px-1.5 py-0.5 border-green-200 text-green-700 dark:border-green-800 dark:text-green-300">
+                      Secure
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-                    JourneyXWave
-                  </span>
-                </div>
-              </div>
             )}
           </div>
 
