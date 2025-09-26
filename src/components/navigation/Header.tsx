@@ -5,8 +5,20 @@ import {
   Bell, 
   Menu,
   Settings,
-  Plane
+  Plane,
+  LogOut
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 interface HeaderProps {
@@ -28,6 +40,7 @@ const Header = ({
 }: HeaderProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, profile, signOut } = useAuthContext();
 
   // Hide header on auth and onboarding pages
   if (location.pathname === "/auth" || location.pathname === "/onboarding") {
@@ -40,6 +53,21 @@ const Header = ({
 
   const handleNotifications = () => {
     navigate("/notifications");
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  const getInitials = (name?: string) => {
+    if (!name) return user?.email?.charAt(0).toUpperCase() || 'U';
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -103,19 +131,58 @@ const Header = ({
                 className="hover:bg-accent relative"
               >
                 <Bell className="w-5 h-5" />
-                {/* Notification badge */}
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full animate-pulse" />
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs flex items-center justify-center"
+                >
+                  3
+                </Badge>
               </Button>
             )}
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/profile")}
-              className="hover:bg-accent"
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage 
+                      src={profile?.avatar_url} 
+                      alt={profile?.display_name || "User"} 
+                    />
+                    <AvatarFallback className="bg-gradient-to-r from-primary to-primary-glow text-primary-foreground">
+                      {getInitials(profile?.display_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {profile?.display_name || 'User'}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Profile Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/emergency')}>
+                  Emergency Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={handleSignOut}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

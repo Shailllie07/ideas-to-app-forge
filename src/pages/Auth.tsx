@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,32 +8,45 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Plane, Mail, Lock, User, Phone } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/contexts/AuthContext";
+import PhoneAuth from "@/components/auth/PhoneAuth";
+import PasswordReset from "@/components/auth/PasswordReset";
+import { validateInput, signInSchema, signUpSchema } from "@/lib/validation";
 
 const Auth = () => {
-  const { user, signIn, signUp, signInWithGoogle, loading } = useAuth();
+  const { user, signIn, signUp, signInWithGoogle, loading } = useAuthContext();
+  const location = useLocation();
+  const [view, setView] = useState<'auth' | 'phone' | 'reset'>('auth');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Redirect if already authenticated
   if (user) {
-    return <Navigate to="/" replace />;
+    const from = location.state?.from?.pathname || '/dashboard';
+    return <Navigate to={from} replace />;
   }
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+
+    // Validate input
+    const validation = validateInput(signInSchema, { email, password });
+    if (!validation.success) {
+      setErrors(validation.errors || {});
+      return;
+    }
+
     setAuthLoading(true);
-    setError("");
     
     try {
-      const { error } = await signIn(email, password);
-      if (error) setError(error.message);
+      await signIn(email, password);
     } catch (err) {
-      setError("An unexpected error occurred");
+      setErrors({ general: "An unexpected error occurred" });
     } finally {
       setAuthLoading(false);
     }
@@ -41,14 +54,21 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+
+    // Validate input
+    const validation = validateInput(signUpSchema, { name, email, phone: phone || undefined, password });
+    if (!validation.success) {
+      setErrors(validation.errors || {});
+      return;
+    }
+
     setAuthLoading(true);
-    setError("");
     
     try {
-      const { error } = await signUp(email, password, { name, phone });
-      if (error) setError(error.message);
+      await signUp(email, password, { name, phone: phone || undefined });
     } catch (err) {
-      setError("An unexpected error occurred");
+      setErrors({ general: "An unexpected error occurred" });
     } finally {
       setAuthLoading(false);
     }
@@ -56,13 +76,12 @@ const Auth = () => {
 
   const handleGoogleSignIn = async () => {
     setAuthLoading(true);
-    setError("");
+    setErrors({});
     
     try {
-      const { error } = await signInWithGoogle();
-      if (error) setError(error.message);
+      await signInWithGoogle();
     } catch (err) {
-      setError("An unexpected error occurred");
+      setErrors({ general: "An unexpected error occurred" });
     } finally {
       setAuthLoading(false);
     }
@@ -72,6 +91,23 @@ const Auth = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5">
         <Loading size="lg" />
+      </div>
+    );
+  }
+
+  // Handle different auth views
+  if (view === 'phone') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <PhoneAuth onBack={() => setView('auth')} />
+      </div>
+    );
+  }
+
+  if (view === 'reset') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <PasswordReset onBack={() => setView('auth')} />
       </div>
     );
   }
@@ -116,6 +152,27 @@ const Auth = () => {
                 Continue with Google
               </Button>
 
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  onClick={() => setView('phone')} 
+                  variant="outline" 
+                  className="h-11"
+                  disabled={authLoading}
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  Phone
+                </Button>
+
+                <Button 
+                  onClick={() => setView('reset')} 
+                  variant="ghost" 
+                  className="h-11"
+                  disabled={authLoading}
+                >
+                  Reset Password
+                </Button>
+              </div>
+
               <div className="relative">
                 <Separator />
                 <span className="absolute inset-0 flex items-center justify-center">
@@ -138,6 +195,9 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -154,11 +214,14 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  {errors.password && (
+                    <p className="text-sm text-destructive">{errors.password}</p>
+                  )}
                 </div>
 
-                {error && (
+                {errors.general && (
                   <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-                    {error}
+                    {errors.general}
                   </div>
                 )}
 
@@ -206,6 +269,9 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  {errors.name && (
+                    <p className="text-sm text-destructive">{errors.name}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -222,21 +288,27 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">Phone Number (Optional)</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="phone"
                       type="tel"
-                      placeholder="Enter your phone number"
+                      placeholder="+1 (555) 123-4567"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="pl-10"
                     />
                   </div>
+                  {errors.phone && (
+                    <p className="text-sm text-destructive">{errors.phone}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -253,11 +325,17 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  {errors.password && (
+                    <p className="text-sm text-destructive">{errors.password}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Must be at least 8 characters with uppercase, lowercase, and number
+                  </p>
                 </div>
 
-                {error && (
+                {errors.general && (
                   <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-                    {error}
+                    {errors.general}
                   </div>
                 )}
 
