@@ -1,5 +1,5 @@
 // Service Worker for JourneyXWave PWA
-const CACHE_NAME = 'journeyxwave-v1';
+const CACHE_NAME = 'journeyxwave-v2';
 const OFFLINE_CACHE = 'offline-v1';
 
 // Cache essential assets
