@@ -8,24 +8,76 @@ export type Booking = Tables<'bookings'>;
 export type BookingInsert = TablesInsert<'bookings'>;
 export type BookingUpdate = TablesUpdate<'bookings'>;
 
-export const useBookings = () => {
+export const useBookings = (tripId?: string) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalBookings: 0,
+    pendingBookings: 0,
+    confirmedBookings: 0,
+    totalSpent: 0
+  });
   const { user } = useAuth();
 
   useEffect(() => {
     if (user) {
       fetchBookings();
+      fetchBookingStats();
     }
-  }, [user]);
+  }, [user, tripId]);
+
+  // Set up realtime subscription for booking updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+          filter: `user_id=eq.${user.id}${tripId ? ` AND trip_id=eq.${tripId}` : ''}`
+        },
+        (payload) => {
+          console.log('Booking changed:', payload);
+          fetchBookings();
+          fetchBookingStats();
+          
+          if (payload.eventType === 'INSERT') {
+            toast({
+              title: "Booking Added",
+              description: "A new booking has been added to your trip",
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            toast({
+              title: "Booking Updated",
+              description: "Your booking status has been updated",
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, tripId]);
 
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('bookings')
         .select('*')
         .order('booking_date', { ascending: false });
+
+      if (tripId) {
+        query = query.eq('trip_id', tripId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setBookings(data || []);
@@ -38,6 +90,28 @@ export const useBookings = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchBookingStats = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .rpc('get_user_booking_stats', { user_uuid: user.id });
+
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setStats({
+          totalBookings: Number(data[0].total_bookings || 0),
+          pendingBookings: Number(data[0].pending_bookings || 0),
+          confirmedBookings: Number(data[0].confirmed_bookings || 0),
+          totalSpent: Number(data[0].total_spent || 0)
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching booking stats:', error);
     }
   };
 
@@ -56,7 +130,7 @@ export const useBookings = () => {
 
       if (error) throw error;
 
-      setBookings(prev => [data, ...prev]);
+      // Note: realtime subscription will handle adding to state
       
       toast({
         title: "Booking Created",
@@ -75,6 +149,47 @@ export const useBookings = () => {
     }
   };
 
+  const syncExternalBooking = async (
+    tripId: string, 
+    bookingType: string, 
+    bookingReference: string, 
+    provider: string, 
+    bookingData?: any
+  ) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('booking-sync', {
+        body: {
+          tripId,
+          bookingType,
+          bookingReference,
+          provider,
+          bookingData
+        }
+      });
+
+      if (error) throw error;
+
+      if (!data.success) {
+        throw new Error(data.error || 'Booking sync failed');
+      }
+
+      toast({
+        title: "Booking Synchronized",
+        description: `Your ${bookingType} booking has been added to your trip`,
+      });
+
+      return { data: data.booking, error: null };
+    } catch (error) {
+      console.error('Error syncing booking:', error);
+      toast({
+        title: "Sync Error",
+        description: error instanceof Error ? error.message : "Failed to sync booking",
+        variant: "destructive",
+      });
+      return { data: null, error };
+    }
+  };
+
   const updateBooking = async (bookingId: string, updates: BookingUpdate) => {
     try {
       const { data, error } = await supabase
@@ -86,7 +201,7 @@ export const useBookings = () => {
 
       if (error) throw error;
 
-      setBookings(prev => prev.map(booking => booking.id === bookingId ? data : booking));
+      // Note: realtime subscription will handle updating state
       
       toast({
         title: "Booking Updated",
@@ -114,7 +229,7 @@ export const useBookings = () => {
 
       if (error) throw error;
 
-      setBookings(prev => prev.filter(booking => booking.id !== bookingId));
+      // Note: realtime subscription will handle removing from state
       
       toast({
         title: "Booking Deleted",
@@ -168,7 +283,9 @@ export const useBookings = () => {
   return {
     bookings,
     loading,
+    stats,
     createBooking,
+    syncExternalBooking,
     updateBooking,
     deleteBooking,
     getBookingsByTrip,

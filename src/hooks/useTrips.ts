@@ -20,6 +20,48 @@ export const useTrips = () => {
     }
   }, [user]);
 
+  // Set up realtime subscription for trip updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('trips-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'trips',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Trip changed:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            const newTrip = payload.new as Trip;
+            setTrips(prev => [newTrip, ...prev]);
+            toast({
+              title: "Trip Created",
+              description: `${newTrip.title} has been added to your trips`,
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedTrip = payload.new as Trip;
+            setTrips(prev => prev.map(trip => 
+              trip.id === updatedTrip.id ? updatedTrip : trip
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            const deletedTrip = payload.old as Trip;
+            setTrips(prev => prev.filter(trip => trip.id !== deletedTrip.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const fetchTrips = async () => {
     try {
       setLoading(true);
@@ -57,7 +99,7 @@ export const useTrips = () => {
 
       if (error) throw error;
 
-      setTrips(prev => [data, ...prev]);
+      // Note: realtime subscription will handle adding to state
       
       toast({
         title: "Trip Created",
@@ -87,7 +129,7 @@ export const useTrips = () => {
 
       if (error) throw error;
 
-      setTrips(prev => prev.map(trip => trip.id === tripId ? data : trip));
+      // Note: realtime subscription will handle updating state
       
       toast({
         title: "Trip Updated",
@@ -115,7 +157,7 @@ export const useTrips = () => {
 
       if (error) throw error;
 
-      setTrips(prev => prev.filter(trip => trip.id !== tripId));
+      // Note: realtime subscription will handle removing from state
       
       toast({
         title: "Trip Deleted",
@@ -164,6 +206,39 @@ export const useTrips = () => {
     }
   };
 
+  const getTripWithActivities = async (tripId: string) => {
+    if (!user) return { data: null, error: new Error('User not authenticated') };
+
+    try {
+      const { data, error } = await supabase
+        .rpc('get_trip_with_activities', { trip_uuid: tripId });
+
+      if (error) throw error;
+      return { data: data?.[0] || null, error: null };
+    } catch (error) {
+      const tripError = error as Error;
+      return { data: null, error: tripError };
+    }
+  };
+
+  const searchTrips = async (searchTerm: string) => {
+    if (!user) return { data: [], error: new Error('User not authenticated') };
+
+    try {
+      const { data, error } = await supabase
+        .rpc('search_user_trips', { 
+          user_uuid: user.id, 
+          search_term: searchTerm 
+        });
+
+      if (error) throw error;
+      return { data: data || [], error: null };
+    } catch (error) {
+      const tripError = error as Error;
+      return { data: [], error: tripError };
+    }
+  };
+
   return {
     trips,
     loading,
@@ -172,6 +247,8 @@ export const useTrips = () => {
     deleteTrip,
     getActiveTrips,
     getTripStatistics,
+    getTripWithActivities,
+    searchTrips,
     refetch: fetchTrips,
   };
 };

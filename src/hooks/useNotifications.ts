@@ -14,10 +14,41 @@ export const useNotifications = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
+  // Set up realtime subscription for notifications
   useEffect(() => {
-    if (user) {
-      fetchNotifications();
-    }
+    if (!user) return;
+
+    const channel = supabase
+      .channel('notifications-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('New notification:', payload);
+          const newNotification = payload.new as Notification;
+          setNotifications(prev => [newNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          
+          // Show toast for high priority notifications
+          if (newNotification.priority === 'high') {
+            toast({
+              title: newNotification.title,
+              description: newNotification.message,
+              variant: newNotification.type === 'emergency' ? 'destructive' : 'default',
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchNotifications = async () => {

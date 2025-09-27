@@ -19,6 +19,44 @@ export const useTripActivities = (tripId?: string) => {
     }
   }, [user, tripId]);
 
+  // Set up realtime subscription for activity updates
+  useEffect(() => {
+    if (!user || !tripId) return;
+
+    const channel = supabase
+      .channel('trip-activities-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'trip_activities',
+          filter: `trip_id=eq.${tripId}`
+        },
+        (payload) => {
+          console.log('Activity changed:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            const newActivity = payload.new as TripActivity;
+            setActivities(prev => [...prev, newActivity].sort((a, b) => a.day_number - b.day_number));
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedActivity = payload.new as TripActivity;
+            setActivities(prev => prev.map(activity => 
+              activity.id === updatedActivity.id ? updatedActivity : activity
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            const deletedActivity = payload.old as TripActivity;
+            setActivities(prev => prev.filter(activity => activity.id !== deletedActivity.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, tripId]);
+
   const fetchActivities = async () => {
     if (!tripId) return;
     
@@ -49,7 +87,7 @@ export const useTripActivities = (tripId?: string) => {
 
       if (error) throw error;
 
-      setActivities(prev => [...prev, data]);
+      // Note: realtime subscription will handle adding to state
       
       toast({
         title: "Activity Added",
@@ -68,10 +106,66 @@ export const useTripActivities = (tripId?: string) => {
     }
   };
 
+  const updateActivity = async (activityId: string, updates: Partial<TripActivity>) => {
+    try {
+      const { data, error } = await supabase
+        .from('trip_activities')
+        .update(updates)
+        .eq('id', activityId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Activity Updated",
+        description: "Activity has been updated successfully!",
+      });
+
+      return { data, error: null };
+    } catch (error) {
+      const activityError = error as Error;
+      toast({
+        title: "Error",
+        description: "Failed to update activity. Please try again.",
+        variant: "destructive",
+      });
+      return { data: null, error: activityError };
+    }
+  };
+
+  const deleteActivity = async (activityId: string) => {
+    try {
+      const { error } = await supabase
+        .from('trip_activities')
+        .delete()
+        .eq('id', activityId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Activity Deleted",
+        description: "Activity has been removed from your itinerary",
+      });
+
+      return { error: null };
+    } catch (error) {
+      const activityError = error as Error;
+      toast({
+        title: "Error",
+        description: "Failed to delete activity. Please try again.",
+        variant: "destructive",
+      });
+      return { error: activityError };
+    }
+  };
+
   return {
     activities,
     loading,
     createActivity,
+    updateActivity,
+    deleteActivity,
     refetch: fetchActivities,
   };
 };

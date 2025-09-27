@@ -362,6 +362,45 @@ export type Database = {
           upcoming_trips: number
         }[]
       }
+      get_trip_with_activities: {
+        Args: { trip_uuid: string }
+        Returns: {
+          activities: Json
+          ai_generated_itinerary: Json
+          budget: number
+          destination: string
+          end_date: string
+          notes: string
+          start_date: string
+          status: string
+          title: string
+          trip_id: string
+        }[]
+      }
+      get_user_booking_stats: {
+        Args: { user_uuid: string }
+        Returns: {
+          avg_booking_amount: number
+          cancelled_bookings: number
+          confirmed_bookings: number
+          pending_bookings: number
+          total_bookings: number
+          total_spent: number
+        }[]
+      }
+      search_user_trips: {
+        Args: { search_term: string; user_uuid: string }
+        Returns: {
+          budget: number
+          destination: string
+          end_date: string
+          relevance_score: number
+          start_date: string
+          status: string
+          title: string
+          trip_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
