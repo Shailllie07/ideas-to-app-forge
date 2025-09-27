@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Loading } from "@/components/ui/loading";
+import { useAIChat } from "@/hooks/useAIChat";
 
 interface Message {
   id: string;
@@ -38,19 +39,27 @@ const quickSuggestions = [
 ];
 
 const ChatInterface = ({ className }: ChatInterfaceProps) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      type: "ai",
-      content: "Hi! I'm your AI travel assistant. I can help you plan trips, find the best deals, answer travel questions, and much more. How can I help you today?",
-      timestamp: new Date(),
-    }
-  ]);
+  const { messages: aiMessages, isLoading, sendMessage } = useAIChat();
   const [inputValue, setInputValue] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Convert AI messages to display format
+  const messages = [
+    {
+      id: "welcome",
+      type: "ai" as const,
+      content: "Hi! I'm your AI travel assistant. I can help you plan trips, find the best deals, answer travel questions, and much more. How can I help you today?",
+      timestamp: new Date(),
+    },
+    ...aiMessages.map(msg => ({
+      id: msg.id,
+      type: msg.role === 'user' ? 'user' as const : 'ai' as const,
+      content: msg.content,
+      timestamp: msg.timestamp,
+    }))
+  ];
 
   useEffect(() => {
     // Auto scroll to bottom when new messages arrive
@@ -65,29 +74,9 @@ const ChatInterface = ({ className }: ChatInterfaceProps) => {
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: "user",
-      content: content.trim(),
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
+    console.log('Sending message to AI:', content);
     setInputValue("");
-    setIsLoading(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: "ai",
-        content: `I'd be happy to help you with "${content}". Let me gather some information and provide you with personalized recommendations. This is a placeholder response for now, but I'll soon be connected to a real AI travel assistant!`,
-        timestamp: new Date(),
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
-      setIsLoading(false);
-    }, 1500);
+    await sendMessage(content);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -175,7 +164,7 @@ const ChatInterface = ({ className }: ChatInterfaceProps) => {
         </ScrollArea>
 
         {/* Quick Suggestions */}
-        {messages.length <= 1 && (
+        {aiMessages.length === 0 && (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground font-medium">Quick suggestions:</p>
             <div className="flex flex-wrap gap-2">
