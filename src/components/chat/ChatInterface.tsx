@@ -97,9 +97,9 @@ const ChatInterface = ({ className }: ChatInterfaceProps) => {
 
   return (
     <Card className={cn("flex flex-col h-full border-0 shadow-none bg-transparent", className)}>
-      <CardContent className="flex-1 flex flex-col p-0 space-y-4">
+      <CardContent className="flex-1 flex flex-col p-0 space-y-4 min-h-0">
         {/* Chat Messages */}
-        <ScrollArea ref={scrollAreaRef} className="flex-1 px-1">
+        <ScrollArea ref={scrollAreaRef} className="flex-1 px-1 min-h-0">
           <div className="space-y-4 pb-4">
             {messages.map((message) => (
               <div
@@ -187,7 +187,7 @@ const ChatInterface = ({ className }: ChatInterfaceProps) => {
         )}
 
         {/* Input Area */}
-        <div className="flex items-end space-x-2 bg-card/50 backdrop-blur rounded-2xl p-2 border">
+        <div className="flex-shrink-0 flex items-end space-x-2 bg-card/50 backdrop-blur rounded-2xl p-2 border">
           <div className="flex-1">
             <Input
               ref={inputRef}
