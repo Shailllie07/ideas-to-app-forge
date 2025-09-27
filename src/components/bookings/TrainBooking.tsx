@@ -74,6 +74,38 @@ const TrainBooking = () => {
     return <XCircle className="w-3 h-3" />;
   };
 
+  const handleConfirmTktBooking = (train: any, className: string) => {
+    if (!fromStation || !toStation || !journeyDate) {
+      alert("Please fill all search criteria first");
+      return;
+    }
+
+    // Build ConfirmTkt URL with booking parameters
+    const confirmTktUrl = new URL("https://www.confirmtkt.com/train-booking");
+    
+    // Add search parameters
+    confirmTktUrl.searchParams.set("from", fromStation);
+    confirmTktUrl.searchParams.set("to", toStation);
+    confirmTktUrl.searchParams.set("date", format(journeyDate, "dd-MM-yyyy"));
+    confirmTktUrl.searchParams.set("trainno", train.number);
+    confirmTktUrl.searchParams.set("class", className);
+    confirmTktUrl.searchParams.set("quota", quota);
+    
+    // Open ConfirmTkt in new tab for booking
+    window.open(confirmTktUrl.toString(), "_blank", "noopener,noreferrer");
+  };
+
+  const handlePNRCheck = () => {
+    if (!pnrNumber || pnrNumber.length !== 10) {
+      alert("Please enter a valid 10-digit PNR number");
+      return;
+    }
+
+    // Redirect to ConfirmTkt PNR status page
+    const pnrUrl = `https://www.confirmtkt.com/pnr-status/${pnrNumber}`;
+    window.open(pnrUrl, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="search" className="space-y-6">
@@ -229,15 +261,16 @@ const TrainBooking = () => {
                                       {details.status}
                                     </div>
                                   </Badge>
-                                  <Button 
-                                    size="sm" 
-                                    className="w-full" 
-                                    disabled={details.available === 0}
-                                    variant={details.available > 0 ? "default" : "secondary"}
-                                  >
-                                    <ExternalLink className="w-3 h-3 mr-1" />
-                                    Book
-                                  </Button>
+                                   <Button 
+                                     size="sm" 
+                                     className="w-full" 
+                                     disabled={details.available === 0}
+                                     variant={details.available > 0 ? "default" : "secondary"}
+                                     onClick={() => handleConfirmTktBooking(train, className)}
+                                   >
+                                     <ExternalLink className="w-3 h-3 mr-1" />
+                                     Book on ConfirmTkt
+                                   </Button>
                                 </div>
                               </CardContent>
                             </Card>
@@ -268,9 +301,13 @@ const TrainBooking = () => {
                   maxLength={10}
                 />
               </div>
-              <Button className="w-full bg-gradient-to-r from-primary to-primary-glow">
-                Check Status
-              </Button>
+               <Button 
+                 className="w-full bg-gradient-to-r from-primary to-primary-glow"
+                 onClick={handlePNRCheck}
+               >
+                 <ExternalLink className="w-4 h-4 mr-2" />
+                 Check Status on ConfirmTkt
+               </Button>
             </CardContent>
           </Card>
         </TabsContent>
