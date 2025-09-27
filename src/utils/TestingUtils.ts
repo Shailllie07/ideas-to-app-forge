@@ -81,12 +81,12 @@ class TestingUtils {
 
     // Test RLS policies
     await this.runTest(suite, 'RLS Policies', async () => {
-      const tables = ['trips', 'bookings', 'emergency_contacts', 'trip_activities'];
-      const policies = {};
+      const tables = ['trips', 'bookings', 'emergency_contacts', 'trip_activities'] as const;
+      const policies: Record<string, string> = {};
       
       for (const table of tables) {
         try {
-          await supabase.from(table).select('id').limit(1);
+          await supabase.from(table as any).select('id').limit(1);
           policies[table] = 'accessible';
         } catch (error) {
           policies[table] = 'protected';

@@ -18,6 +18,7 @@ import Maps from "./pages/Maps";
 import Emergency from "./pages/Emergency";
 import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
+import QualityAssurancePage from "./pages/QualityAssurance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,11 @@ const App = () => (
                   <Route path="/notifications" element={
                     <ProtectedRoute>
                       <Notifications />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/qa" element={
+                    <ProtectedRoute>
+                      <QualityAssurancePage />
                     </ProtectedRoute>
                   } />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
