@@ -7,7 +7,7 @@ export interface PushNotificationPayload {
   badge?: string;
   tag?: string;
   data?: any;
-  actions?: NotificationAction[];
+  priority?: 'low' | 'normal' | 'high';
 }
 
 export interface NotificationSubscriptionData {
@@ -177,8 +177,7 @@ class PushNotificationService {
       badge: payload.badge || '/badge-72.png',
       tag: payload.tag,
       data: payload.data,
-      actions: payload.actions,
-      requireInteraction: true
+      requireInteraction: payload.priority === 'high'
     });
 
     notification.onclick = (event) => {

@@ -112,6 +112,75 @@ export type Database = {
         }
         Relationships: []
       }
+      location_history: {
+        Row: {
+          accuracy: number | null
+          activity_type: string | null
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          metadata: Json | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number | null
+          activity_type?: string | null
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          metadata?: Json | null
+          timestamp: string
+          user_id: string
+        }
+        Update: {
+          accuracy?: number | null
+          activity_type?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          metadata?: Json | null
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      location_sharing_sessions: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          latitude: number
+          longitude: number
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          latitude: number
+          longitude: number
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number
+          longitude?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           action_url: string | null
@@ -197,6 +266,7 @@ export type Database = {
           emergency_contact_consent: boolean | null
           emergency_notes: string | null
           id: string
+          location_history_enabled: boolean | null
           medical_allergies: string[] | null
           medical_conditions: string[] | null
           medical_medications: string[] | null
@@ -212,6 +282,7 @@ export type Database = {
           emergency_contact_consent?: boolean | null
           emergency_notes?: string | null
           id: string
+          location_history_enabled?: boolean | null
           medical_allergies?: string[] | null
           medical_conditions?: string[] | null
           medical_medications?: string[] | null
@@ -227,11 +298,84 @@ export type Database = {
           emergency_contact_consent?: boolean | null
           emergency_notes?: string | null
           id?: string
+          location_history_enabled?: boolean | null
           medical_allergies?: string[] | null
           medical_conditions?: string[] | null
           medical_medications?: string[] | null
           phone_number?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      proximity_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          latitude: number
+          longitude: number
+          metadata: Json | null
+          name: string
+          radius: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude: number
+          longitude: number
+          metadata?: Json | null
+          name: string
+          radius?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number
+          longitude?: number
+          metadata?: Json | null
+          name?: string
+          radius?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          created_at: string
+          device_info: Json | null
+          endpoint: string
+          id: string
+          keys: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_info?: Json | null
+          endpoint: string
+          id?: string
+          keys: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_info?: Json | null
+          endpoint?: string
+          id?: string
+          keys?: Json
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -284,6 +428,109 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "trip_activities_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_collaborators: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          invited_at: string
+          invited_by: string
+          role: string
+          status: string
+          trip_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string
+          invited_by: string
+          role?: string
+          status?: string
+          trip_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string
+          role?: string
+          status?: string
+          trip_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_collaborators_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          currency: string
+          date: string
+          description: string
+          id: string
+          receipt_url: string | null
+          split_data: Json | null
+          split_type: string
+          trip_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          currency?: string
+          date: string
+          description: string
+          id?: string
+          receipt_url?: string | null
+          split_data?: Json | null
+          split_type?: string
+          trip_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string
+          id?: string
+          receipt_url?: string | null
+          split_data?: Json | null
+          split_type?: string
+          trip_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_expenses_trip_id_fkey"
             columns: ["trip_id"]
             isOneToOne: false
             referencedRelation: "trips"
