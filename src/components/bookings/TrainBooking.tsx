@@ -62,6 +62,17 @@ const TrainBooking = () => {
     setToStation(temp);
   };
 
+  const handleConfirmTktBooking = (train: typeof mockTrains[0], trainClass: string) => {
+    const bookingUrl = `https://www.confirmtkt.com/train-booking/${train.number}?from=${fromStation}&to=${toStation}&date=${journeyDate ? format(journeyDate, 'yyyy-MM-dd') : ''}&class=${trainClass}&quota=${quota}`;
+    window.open(bookingUrl, '_blank');
+  };
+
+  const handlePNRCheck = () => {
+    if (pnrNumber.length === 10) {
+      window.open(`https://www.confirmtkt.com/pnr-status/${pnrNumber}`, '_blank');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     if (status === "Available") return "bg-accent text-accent-foreground";
     if (status.includes("WL")) return "bg-destructive text-destructive-foreground";
@@ -234,9 +245,10 @@ const TrainBooking = () => {
                                     className="w-full" 
                                     disabled={details.available === 0}
                                     variant={details.available > 0 ? "default" : "secondary"}
+                                    onClick={() => handleConfirmTktBooking(train, className)}
                                   >
                                     <ExternalLink className="w-3 h-3 mr-1" />
-                                    Book
+                                    Book on ConfirmTkt
                                   </Button>
                                 </div>
                               </CardContent>
@@ -268,8 +280,12 @@ const TrainBooking = () => {
                   maxLength={10}
                 />
               </div>
-              <Button className="w-full bg-gradient-to-r from-primary to-primary-glow">
-                Check Status
+              <Button 
+                className="w-full bg-gradient-to-r from-primary to-primary-glow"
+                onClick={handlePNRCheck}
+                disabled={pnrNumber.length !== 10}
+              >
+                Check Status on ConfirmTkt
               </Button>
             </CardContent>
           </Card>
