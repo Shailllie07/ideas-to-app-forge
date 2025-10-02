@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { PWAProvider } from "@/components/pwa/PWAProvider";
+
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { Suspense } from "react";
 import { Loading } from "@/components/ui/loading";
@@ -26,8 +26,6 @@ const queryClient = new QueryClient();
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      
-        <PWAProvider showInstallPrompt={true} autoInstallPromptDelay={15000}>
           <AuthProvider>
             <Toaster />
             <Sonner />
@@ -78,8 +76,6 @@ const App = () => (
               </Suspense>
             </BrowserRouter>
           </AuthProvider>
-        </PWAProvider>
-      
     </QueryClientProvider>
   </ErrorBoundary>
 );
