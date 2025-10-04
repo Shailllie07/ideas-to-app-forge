@@ -13,17 +13,18 @@ serve(async (req) => {
   }
 
   try {
+    // NOTE: JWT authentication is now required by default (config.toml)
+    // Only authenticated users can access this endpoint
+    
     // Get the Mapbox token from Supabase secrets
     const mapboxToken = Deno.env.get('MAPBOX_PUBLIC_TOKEN')
     
     if (!mapboxToken) {
+      console.error('MAPBOX_PUBLIC_TOKEN not configured');
       return new Response(
-        JSON.stringify({ 
-          error: 'Mapbox token not configured in Supabase secrets',
-          message: 'Please add MAPBOX_PUBLIC_TOKEN to your Supabase Edge Function secrets' 
-        }),
+        JSON.stringify({ error: 'Mapbox token not available' }),
         { 
-          status: 400, 
+          status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
@@ -36,11 +37,12 @@ serve(async (req) => {
       }
     )
   } catch (error) {
+    // Log detailed error server-side
+    console.error('Error retrieving Mapbox token:', error);
+    
+    // Return generic error to client
     return new Response(
-      JSON.stringify({ 
-        error: 'Failed to retrieve Mapbox token',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }),
+      JSON.stringify({ error: 'Unable to retrieve map token. Please try again.' }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

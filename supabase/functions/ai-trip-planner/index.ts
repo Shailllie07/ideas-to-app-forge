@@ -2,6 +2,42 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Input validation
+function validateTripPlannerRequest(data: any): { valid: boolean; error?: string } {
+  if (!data.destination || typeof data.destination !== 'string') {
+    return { valid: false, error: 'destination is required' };
+  }
+  
+  if (data.destination.length > 200) {
+    return { valid: false, error: 'destination exceeds maximum length' };
+  }
+  
+  if (!data.startDate || !data.endDate) {
+    return { valid: false, error: 'startDate and endDate are required' };
+  }
+  
+  const startDate = new Date(data.startDate);
+  const endDate = new Date(data.endDate);
+  
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    return { valid: false, error: 'Invalid date format' };
+  }
+  
+  if (endDate <= startDate) {
+    return { valid: false, error: 'endDate must be after startDate' };
+  }
+  
+  if (data.budget && (typeof data.budget !== 'number' || data.budget < 0)) {
+    return { valid: false, error: 'budget must be a positive number' };
+  }
+  
+  if (data.travelers && (typeof data.travelers !== 'number' || data.travelers < 1 || data.travelers > 50)) {
+    return { valid: false, error: 'travelers must be between 1 and 50' };
+  }
+  
+  return { valid: true };
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -19,16 +55,28 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY is not set');
     }
 
+    // Parse and validate request
+    const requestBody = await req.json();
+    const validation = validateTripPlannerRequest(requestBody);
+    
+    if (!validation.valid) {
+      console.error('Validation error:', validation.error);
+      return new Response(
+        JSON.stringify({ error: 'Invalid trip planning request' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     const { 
       destination, 
       startDate, 
       endDate, 
       budget, 
       travelStyle, 
-      travelers, 
+      travelers = 1,
       preferences,
       conversationHistory 
-    } = await req.json();
+    } = requestBody;
 
     console.log('AI Trip Planning request:', { destination, startDate, endDate, budget, travelStyle });
 
@@ -86,7 +134,7 @@ serve(async (req) => {
     if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      throw new Error('AI service error');
     }
 
     const data = await response.json();
@@ -147,11 +195,14 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    // Log detailed error server-side
     console.error('Error in ai-trip-planner:', error);
+    
+    // Return generic error to client
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: 'Unable to generate trip plan. Please try again.',
         timestamp: new Date().toISOString()
       }),
       {

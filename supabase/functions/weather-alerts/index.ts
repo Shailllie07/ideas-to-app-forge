@@ -1,6 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Input validation
+function validateCoordinates(lat: any, lng: any): { valid: boolean; error?: string } {
+  if (typeof lat !== 'number' || lat < -90 || lat > 90) {
+    return { valid: false, error: 'Invalid latitude (must be -90 to 90)' };
+  }
+  
+  if (typeof lng !== 'number' || lng < -180 || lng > 180) {
+    return { valid: false, error: 'Invalid longitude (must be -180 to 180)' };
+  }
+  
+  return { valid: true };
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -19,24 +32,27 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log(`Weather alerts action: ${action}`, data);
+    console.log(`Weather alerts action: ${action}`);
 
     switch (action) {
       case 'get_weather_alerts':
-        return await getWeatherAlerts(supabase, data);
+        return await getWeatherAlerts(data, supabase);
       case 'send_weather_notification':
-        return await sendWeatherNotification(supabase, data);
+        return await sendWeatherNotification(data, supabase);
       case 'update_travel_recommendations':
-        return await updateTravelRecommendations(supabase, data);
+        return await updateTravelRecommendations(data, supabase);
       default:
-        throw new Error(`Unknown action: ${action}`);
+        throw new Error('Invalid action');
     }
   } catch (error) {
-    console.error('Error in weather-alerts:', error);
+    // Log detailed error server-side
+    console.error('Error in weather-alerts function:', error);
+    
+    // Return generic error to client
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: 'Unable to process weather alerts. Please try again.'
       }),
       {
         status: 500,
@@ -46,11 +62,13 @@ serve(async (req) => {
   }
 });
 
-async function getWeatherAlerts(supabase: any, data: any) {
+async function getWeatherAlerts(data: any, supabase: any) {
   const { latitude, longitude, userId } = data;
 
-  if (!latitude || !longitude) {
-    throw new Error('Missing location coordinates');
+  // Validate coordinates
+  const validation = validateCoordinates(latitude, longitude);
+  if (!validation.valid) {
+    throw new Error(validation.error);
   }
 
   // Mock weather data - in production, integrate with OpenWeatherMap or similar
@@ -61,8 +79,8 @@ async function getWeatherAlerts(supabase: any, data: any) {
       severity: 'high',
       title: 'Heavy Rain Warning',
       description: 'Heavy rainfall expected in your area with potential flooding',
-      start_time: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
-      end_time: new Date(Date.now() + 14400000).toISOString(), // 4 hours from now
+      start_time: new Date(Date.now() + 3600000).toISOString(),
+      end_time: new Date(Date.now() + 14400000).toISOString(),
       affected_areas: ['Current Location', 'Surrounding Areas'],
       instructions: [
         'Avoid low-lying areas prone to flooding',
@@ -70,23 +88,6 @@ async function getWeatherAlerts(supabase: any, data: any) {
         'Keep emergency supplies accessible'
       ],
       impact_level: 'moderate_to_high',
-      coordinates: { lat: latitude, lng: longitude }
-    },
-    {
-      id: 'alert-2',
-      type: 'temperature',
-      severity: 'moderate',
-      title: 'High Temperature Advisory',
-      description: 'Temperatures expected to reach 35°C+ with high humidity',
-      start_time: new Date(Date.now() + 86400000).toISOString(), // 24 hours from now
-      end_time: new Date(Date.now() + 172800000).toISOString(), // 48 hours from now
-      affected_areas: ['City Center', 'Metropolitan Area'],
-      instructions: [
-        'Stay hydrated and take frequent breaks',
-        'Avoid prolonged outdoor exposure during peak hours',
-        'Wear light-colored, loose-fitting clothing'
-      ],
-      impact_level: 'moderate',
       coordinates: { lat: latitude, lng: longitude }
     }
   ];
@@ -118,11 +119,11 @@ async function getWeatherAlerts(supabase: any, data: any) {
   );
 }
 
-async function sendWeatherNotification(supabase: any, data: any) {
+async function sendWeatherNotification(data: any, supabase: any) {
   const { userId, alertId, alertData } = data;
 
   if (!userId || !alertId) {
-    throw new Error('Missing required fields: userId, alertId');
+    throw new Error('Missing required fields');
   }
 
   // Create notification record
@@ -131,17 +132,16 @@ async function sendWeatherNotification(supabase: any, data: any) {
     .insert([{
       user_id: userId,
       type: 'weather',
-      title: alertData.title || 'Weather Alert',
-      message: alertData.description || 'Weather conditions may affect your travel',
-      priority: alertData.severity === 'high' ? 'high' : 'normal',
+      title: alertData?.title || 'Weather Alert',
+      message: alertData?.description || 'Weather conditions may affect your travel',
+      priority: alertData?.severity === 'high' ? 'high' : 'normal',
       related_id: alertId
     }]);
 
   if (error) {
-    throw new Error(`Failed to create notification: ${error.message}`);
+    throw new Error('Database error');
   }
 
-  // In production, would also send push notification
   console.log(`Weather notification sent to user ${userId} for alert ${alertId}`);
 
   return new Response(
@@ -157,7 +157,7 @@ async function sendWeatherNotification(supabase: any, data: any) {
   );
 }
 
-async function updateTravelRecommendations(supabase: any, data: any) {
+async function updateTravelRecommendations(data: any, supabase: any) {
   const { userId, weatherConditions, tripId } = data;
 
   if (!userId) {
@@ -213,7 +213,6 @@ async function updateTravelRecommendations(supabase: any, data: any) {
 function generateTripRecommendations(trip: any, weatherConditions: any) {
   const recommendations = [];
 
-  // Example weather-based recommendations
   if (weatherConditions?.precipitation_high) {
     recommendations.push({
       type: 'activity_adjustment',
@@ -236,19 +235,6 @@ function generateTripRecommendations(trip: any, weatherConditions: any) {
         'Schedule outdoor activities for early morning or evening',
         'Take frequent breaks in air-conditioned spaces',
         'Stay hydrated and wear appropriate clothing'
-      ]
-    });
-  }
-
-  if (weatherConditions?.severe_weather) {
-    recommendations.push({
-      type: 'safety_alert',
-      priority: 'high',
-      message: 'Severe weather conditions may impact travel safety',
-      suggestions: [
-        'Monitor local weather updates closely',
-        'Have backup indoor plans ready',
-        'Consider postponing travel if conditions worsen'
       ]
     });
   }

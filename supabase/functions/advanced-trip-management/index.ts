@@ -1,6 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Input validation
+function validateEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+function validateUUID(id: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -19,28 +30,31 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log(`Advanced trip management action: ${action}`, data);
+    console.log(`Advanced trip management action: ${action}`);
 
     switch (action) {
       case 'invite_collaborator':
-        return await inviteCollaborator(supabase, data);
+        return await inviteCollaborator(data, supabase);
       case 'replan_trip':
-        return await replanTrip(supabase, data);
+        return await replanTrip(data, supabase);
       case 'export_trip':
-        return await exportTripData(supabase, data);
+        return await exportTripData(data, supabase);
       case 'analyze_budget':
-        return await analyzeBudget(supabase, data);
+        return await analyzeBudget(data, supabase);
       case 'backup_trip':
-        return await backupTrip(supabase, data);
+        return await backupTrip(data, supabase);
       default:
-        throw new Error(`Unknown action: ${action}`);
+        throw new Error('Invalid action');
     }
   } catch (error) {
+    // Log detailed error server-side
     console.error('Error in advanced-trip-management:', error);
+    
+    // Return generic error to client
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: 'Unable to process trip management request. Please try again.'
       }),
       {
         status: 500,
@@ -50,11 +64,19 @@ serve(async (req) => {
   }
 });
 
-async function inviteCollaborator(supabase: any, data: any) {
+async function inviteCollaborator(data: any, supabase: any) {
   const { tripId, email, role, invitedBy } = data;
 
   if (!tripId || !email || !invitedBy) {
-    throw new Error('Missing required fields: tripId, email, invitedBy');
+    throw new Error('Missing required fields');
+  }
+  
+  if (!validateEmail(email)) {
+    throw new Error('Invalid email format');
+  }
+  
+  if (!validateUUID(tripId) || !validateUUID(invitedBy)) {
+    throw new Error('Invalid ID format');
   }
 
   // Check if trip exists and user has permission
@@ -86,11 +108,11 @@ async function inviteCollaborator(supabase: any, data: any) {
   );
 }
 
-async function replanTrip(supabase: any, data: any) {
+async function replanTrip(data: any, supabase: any) {
   const { tripId, reason, userId } = data;
 
   if (!tripId || !reason || !userId) {
-    throw new Error('Missing required fields: tripId, reason, userId');
+    throw new Error('Missing required fields');
   }
 
   // Get trip details
@@ -149,11 +171,11 @@ async function replanTrip(supabase: any, data: any) {
   );
 }
 
-async function exportTripData(supabase: any, data: any) {
+async function exportTripData(data: any, supabase: any) {
   const { tripId, format, userId } = data;
 
   if (!tripId || !userId) {
-    throw new Error('Missing required fields: tripId, userId');
+    throw new Error('Missing required fields');
   }
 
   // Get trip with all related data
@@ -195,11 +217,11 @@ async function exportTripData(supabase: any, data: any) {
   );
 }
 
-async function analyzeBudget(supabase: any, data: any) {
+async function analyzeBudget(data: any, supabase: any) {
   const { tripId, userId } = data;
 
   if (!tripId || !userId) {
-    throw new Error('Missing required fields: tripId, userId');
+    throw new Error('Missing required fields');
   }
 
   // Get trip and expenses
@@ -252,11 +274,11 @@ async function analyzeBudget(supabase: any, data: any) {
   );
 }
 
-async function backupTrip(supabase: any, data: any) {
+async function backupTrip(data: any, supabase: any) {
   const { tripId, userId } = data;
 
   if (!tripId || !userId) {
-    throw new Error('Missing required fields: tripId, userId');
+    throw new Error('Missing required fields');
   }
 
   // Get complete trip data
@@ -287,7 +309,7 @@ async function backupTrip(supabase: any, data: any) {
     retention_period: '1 year'
   };
 
-  console.log(`Creating backup for trip ${tripId}:`, backup);
+  console.log(`Creating backup for trip ${tripId}`);
 
   return new Response(
     JSON.stringify({

@@ -1,4 +1,4 @@
 project_id = "vhaqmwyinixyigziqoqf"
 
-[functions.ai-chat]
-verify_jwt = false
+# All functions now require JWT authentication by default
+# This prevents unauthorized access and API abuse
