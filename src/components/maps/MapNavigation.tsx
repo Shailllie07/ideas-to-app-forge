@@ -64,37 +64,86 @@ const MapNavigation = () => {
   }, [isTokenReady]);
 
   const searchDestination = async () => {
-    if (!destination.trim()) return;
+    if (!destination.trim() || !map.current) return;
 
     try {
-      // Mock geocoding - in real app, use Mapbox Geocoding API
-      const mockCoordinates: [number, number] = [77.2300, 28.6500]; // Mock destination
+      const token = mapboxgl.accessToken;
       
-      // Add destination marker
-      if (map.current) {
+      // Use Mapbox Geocoding API to search for destination
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(destination)}.json?access_token=${token}&limit=1`
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to geocode destination');
+      }
+      
+      const data = await response.json();
+      
+      if (data.features && data.features.length > 0) {
+        const coordinates: [number, number] = data.features[0].center;
+        const placeName = data.features[0].place_name;
+        
+        // Remove any existing destination markers
+        const markers = document.querySelectorAll('.mapboxgl-marker');
+        markers.forEach((marker) => {
+          if (marker.querySelector('[style*="background-color: rgb(239, 68, 68)"]')) {
+            marker.remove();
+          }
+        });
+        
+        // Add new destination marker
         new mapboxgl.Marker({ color: '#ef4444' })
-          .setLngLat(mockCoordinates)
-          .addTo(map.current);
+          .setLngLat(coordinates)
+          .setPopup(new mapboxgl.Popup().setHTML(`<div class="font-semibold">${placeName}</div>`))
+          .addTo(map.current)
+          .togglePopup();
 
         // Fit map to show both current location and destination
         if (currentLocation) {
           const bounds = new mapboxgl.LngLatBounds()
             .extend(currentLocation)
-            .extend(mockCoordinates);
+            .extend(coordinates);
           
-          map.current.fitBounds(bounds, { padding: 50 });
+          map.current.fitBounds(bounds, { padding: 100 });
           
-          // Simulate route calculation
+          // Calculate actual distance and duration
+          const distance = calculateDistance(
+            currentLocation[1], currentLocation[0],
+            coordinates[1], coordinates[0]
+          );
+          
+          const duration = Math.round((distance / 40) * 60); // Assuming 40 km/h average speed
+          
           setRouteInfo({
-            distance: "12.5 km",
-            duration: "25 min",
-            route: "Fastest route via Ring Road"
+            distance: `${distance.toFixed(1)} km`,
+            duration: `${duration} min`,
+            route: placeName.split(',')[0]
           });
+        } else {
+          // Just center on destination if no current location
+          map.current.flyTo({ center: coordinates, zoom: 14 });
         }
+      } else {
+        alert('Destination not found. Please try a different search term.');
       }
     } catch (error) {
       console.error('Error searching destination:', error);
+      alert('Failed to search for destination. Please try again.');
     }
+  };
+
+  // Calculate distance between two coordinates in kilometers
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Radius of the Earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   };
 
   const startNavigation = () => {
