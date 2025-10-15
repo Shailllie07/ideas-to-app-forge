@@ -5,12 +5,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeftRight, Calendar as CalendarIcon, MapPin, Users, Clock, Star, ExternalLink, Filter, ArrowUpDown } from "lucide-react";
+import { ArrowLeftRight, Calendar as CalendarIcon, MapPin, Clock, Star, ExternalLink, Filter, ArrowUpDown, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const FlightBooking = () => {
   const [fromCity, setFromCity] = useState("");
@@ -20,45 +21,63 @@ const FlightBooking = () => {
   const [passengers, setPassengers] = useState("1");
   const [flightClass, setFlightClass] = useState("economy");
   const [showResults, setShowResults] = useState(false);
+  const [flights, setFlights] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const mockFlights = [
-    {
-      id: 1,
-      airline: "IndiGo",
-      logo: "6E",
-      departure: { time: "06:30", city: "Delhi (DEL)" },
-      arrival: { time: "08:45", city: "Mumbai (BOM)" },
-      duration: "2h 15m",
-      stops: "Non-stop",
-      price: 4250,
-      rating: 4.2
-    },
-    {
-      id: 2,
-      airline: "Air India",
-      logo: "AI",
-      departure: { time: "09:15", city: "Delhi (DEL)" },
-      arrival: { time: "11:30", city: "Mumbai (BOM)" },
-      duration: "2h 15m",
-      stops: "Non-stop",
-      price: 5100,
-      rating: 4.0
-    },
-    {
-      id: 3,
-      airline: "SpiceJet",
-      logo: "SG",
-      departure: { time: "14:20", city: "Delhi (DEL)" },
-      arrival: { time: "16:45", city: "Mumbai (BOM)" },
-      duration: "2h 25m",
-      stops: "Non-stop",
-      price: 3890,
-      rating: 3.8
+  const handleSearch = async () => {
+    if (!fromCity || !toCity || !departDate) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
     }
-  ];
 
-  const handleSearch = () => {
+    setLoading(true);
     setShowResults(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('flight-search', {
+        body: {
+          fromCity,
+          toCity,
+          departDate: format(departDate, 'yyyy-MM-dd'),
+          passengers,
+          flightClass,
+        },
+      });
+
+      if (error) {
+        console.error('Flight search error:', error);
+        toast({
+          title: "Search Failed",
+          description: "Unable to search for flights. Please try again.",
+          variant: "destructive",
+        });
+        setFlights([]);
+      } else {
+        console.log('Flight search results:', data);
+        setFlights(data.flights || []);
+        
+        if (!data.flights || data.flights.length === 0) {
+          toast({
+            title: "No Flights Found",
+            description: "Try different cities or dates",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Flight search error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+      setFlights([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const swapCities = () => {
@@ -167,14 +186,23 @@ const FlightBooking = () => {
         </div>
       </div>
 
-      <Button onClick={handleSearch} className="w-full bg-gradient-to-r from-primary to-primary-glow">
-        Search Flights
+      <Button onClick={handleSearch} className="w-full bg-gradient-to-r from-primary to-primary-glow" disabled={loading}>
+        {loading ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Searching Flights...
+          </>
+        ) : (
+          'Search Flights'
+        )}
       </Button>
 
       {showResults && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Available Flights</h3>
+            <h3 className="text-lg font-semibold">
+              {loading ? 'Searching...' : `Available Flights (${flights.length})`}
+            </h3>
             <div className="flex gap-2">
               <Button variant="outline" size="sm">
                 <Filter className="w-4 h-4 mr-2" />
@@ -187,56 +215,73 @@ const FlightBooking = () => {
             </div>
           </div>
 
-          <div className="grid gap-4">
-            {mockFlights.map((flight) => (
-              <Card key={flight.id} className="border-0 shadow-md hover:shadow-lg transition-shadow bg-card/50 backdrop-blur">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-r from-primary to-primary-glow rounded-lg flex items-center justify-center text-primary-foreground font-bold">
-                        {flight.logo}
-                      </div>
-                      <div>
-                        <div className="font-medium">{flight.airline}</div>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Star className="w-3 h-3 fill-current text-accent" />
-                          {flight.rating}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : flights.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No flights found. Try different search criteria.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {flights.map((flight) => (
+                <Card key={flight.id} className="border-0 shadow-md hover:shadow-lg transition-shadow bg-card/50 backdrop-blur">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        {flight.logo ? (
+                          <img src={flight.logo} alt={flight.airline} className="w-12 h-12 object-contain rounded-lg" />
+                        ) : (
+                          <div className="w-12 h-12 bg-gradient-to-r from-primary to-primary-glow rounded-lg flex items-center justify-center text-primary-foreground font-bold text-xs">
+                            {flight.airline.substring(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-medium">{flight.airline}</div>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Star className="w-3 h-3 fill-current text-accent" />
+                            {flight.rating.toFixed(1)}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-8">
-                      <div className="text-center">
-                        <div className="font-bold text-lg">{flight.departure.time}</div>
-                        <div className="text-sm text-muted-foreground">{flight.departure.city}</div>
-                      </div>
-
-                      <div className="text-center">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="w-4 h-4" />
-                          {flight.duration}
+                      <div className="flex items-center gap-8">
+                        <div className="text-center">
+                          <div className="font-bold text-lg">{flight.departure.time}</div>
+                          <div className="text-sm text-muted-foreground">{flight.departure.city}</div>
                         </div>
-                        <div className="text-xs">{flight.stops}</div>
+
+                        <div className="text-center">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="w-4 h-4" />
+                            {flight.duration}
+                          </div>
+                          <div className="text-xs">{flight.stops}</div>
+                        </div>
+
+                        <div className="text-center">
+                          <div className="font-bold text-lg">{flight.arrival.time}</div>
+                          <div className="text-sm text-muted-foreground">{flight.arrival.city}</div>
+                        </div>
                       </div>
 
-                      <div className="text-center">
-                        <div className="font-bold text-lg">{flight.arrival.time}</div>
-                        <div className="text-sm text-muted-foreground">{flight.arrival.city}</div>
+                      <div className="text-right">
+                        <div className="font-bold text-2xl">₹{flight.price.toLocaleString()}</div>
+                        <Button 
+                          className="mt-2 bg-gradient-to-r from-primary to-primary-glow"
+                          onClick={() => flight.bookingUrl && window.open(flight.bookingUrl, '_blank')}
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Book Now
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="text-right">
-                      <div className="font-bold text-2xl">₹{flight.price.toLocaleString()}</div>
-                      <Button className="mt-2 bg-gradient-to-r from-primary to-primary-glow">
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Book Now
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
