@@ -101,25 +101,87 @@ const MapNavigation = () => {
 
         // Fit map to show both current location and destination
         if (currentLocation) {
-          const bounds = new mapboxgl.LngLatBounds()
-            .extend(currentLocation)
-            .extend(coordinates);
+          // Get actual driving route from Mapbox Directions API
+          const directionsUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${currentLocation[0]},${currentLocation[1]};${coordinates[0]},${coordinates[1]}?geometries=geojson&access_token=${token}`;
           
-          map.current.fitBounds(bounds, { padding: 100 });
+          const directionsResponse = await fetch(directionsUrl);
+          const directionsData = await directionsResponse.json();
           
-          // Calculate actual distance and duration
-          const distance = calculateDistance(
-            currentLocation[1], currentLocation[0],
-            coordinates[1], coordinates[0]
-          );
-          
-          const duration = Math.round((distance / 40) * 60); // Assuming 40 km/h average speed
-          
-          setRouteInfo({
-            distance: `${distance.toFixed(1)} km`,
-            duration: `${duration} min`,
-            route: placeName.split(',')[0]
-          });
+          if (directionsData.routes && directionsData.routes.length > 0) {
+            const route = directionsData.routes[0];
+            const routeGeometry = route.geometry;
+            
+            // Remove any existing route layers
+            if (map.current.getLayer('route')) {
+              map.current.removeLayer('route');
+            }
+            if (map.current.getSource('route')) {
+              map.current.removeSource('route');
+            }
+            
+            // Add the route to the map
+            map.current.addSource('route', {
+              type: 'geojson',
+              data: {
+                type: 'Feature',
+                properties: {},
+                geometry: routeGeometry
+              }
+            });
+            
+            map.current.addLayer({
+              id: 'route',
+              type: 'line',
+              source: 'route',
+              layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+              },
+              paint: {
+                'line-color': '#3b82f6',
+                'line-width': 5,
+                'line-opacity': 0.75
+              }
+            });
+            
+            // Fit bounds to show the entire route
+            const bounds = new mapboxgl.LngLatBounds()
+              .extend(currentLocation)
+              .extend(coordinates);
+            
+            map.current.fitBounds(bounds, { padding: 100 });
+            
+            // Use actual route distance and duration from API
+            const distanceKm = (route.distance / 1000).toFixed(1);
+            const durationMin = Math.round(route.duration / 60);
+            
+            setRouteInfo({
+              distance: `${distanceKm} km`,
+              duration: `${durationMin} min`,
+              route: placeName.split(',')[0]
+            });
+          } else {
+            // Fallback to straight-line if directions API fails
+            const bounds = new mapboxgl.LngLatBounds()
+              .extend(currentLocation)
+              .extend(coordinates);
+            
+            map.current.fitBounds(bounds, { padding: 100 });
+            
+            // Calculate straight-line distance
+            const distance = calculateDistance(
+              currentLocation[1], currentLocation[0],
+              coordinates[1], coordinates[0]
+            );
+            
+            const duration = Math.round((distance / 40) * 60);
+            
+            setRouteInfo({
+              distance: `${distance.toFixed(1)} km`,
+              duration: `${duration} min`,
+              route: placeName.split(',')[0]
+            });
+          }
         } else {
           // Just center on destination if no current location
           map.current.flyTo({ center: coordinates, zoom: 14 });

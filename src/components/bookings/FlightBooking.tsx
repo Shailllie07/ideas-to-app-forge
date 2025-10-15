@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,16 +6,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeftRight, Calendar as CalendarIcon, MapPin, Clock, Star, ExternalLink, Filter, ArrowUpDown, Loader2 } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { ArrowLeftRight, Calendar as CalendarIcon, MapPin, Clock, Star, ExternalLink, Filter, ArrowUpDown, Loader2, Check } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAirportSearch, Airport } from "@/hooks/useAirportSearch";
 
 const FlightBooking = () => {
-  const [fromCity, setFromCity] = useState("");
-  const [toCity, setToCity] = useState("");
+  const [fromAirport, setFromAirport] = useState<Airport | null>(null);
+  const [toAirport, setToAirport] = useState<Airport | null>(null);
+  const [fromSearch, setFromSearch] = useState("");
+  const [toSearch, setToSearch] = useState("");
+  const [fromOpen, setFromOpen] = useState(false);
+  const [toOpen, setToOpen] = useState(false);
   const [departDate, setDepartDate] = useState<Date>();
   const [returnDate, setReturnDate] = useState<Date>();
   const [passengers, setPassengers] = useState("1");
@@ -23,12 +28,32 @@ const FlightBooking = () => {
   const [showResults, setShowResults] = useState(false);
   const [flights, setFlights] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  const { searchAirports } = useAirportSearch();
+  const [fromResults, setFromResults] = useState<Airport[]>([]);
+  const [toResults, setToResults] = useState<Airport[]>([]);
+
+  useEffect(() => {
+    if (fromSearch.length >= 2) {
+      setFromResults(searchAirports(fromSearch));
+    } else {
+      setFromResults([]);
+    }
+  }, [fromSearch]);
+
+  useEffect(() => {
+    if (toSearch.length >= 2) {
+      setToResults(searchAirports(toSearch));
+    } else {
+      setToResults([]);
+    }
+  }, [toSearch]);
 
   const handleSearch = async () => {
-    if (!fromCity || !toCity || !departDate) {
+    if (!fromAirport || !toAirport || !departDate) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields",
+        description: "Please select airports and travel date",
         variant: "destructive",
       });
       return;
@@ -40,8 +65,8 @@ const FlightBooking = () => {
     try {
       const { data, error } = await supabase.functions.invoke('flight-search', {
         body: {
-          fromCity,
-          toCity,
+          fromCity: fromAirport.code,
+          toCity: toAirport.code,
           departDate: format(departDate, 'yyyy-MM-dd'),
           passengers,
           flightClass,
@@ -81,9 +106,12 @@ const FlightBooking = () => {
   };
 
   const swapCities = () => {
-    const temp = fromCity;
-    setFromCity(toCity);
-    setToCity(temp);
+    const tempAirport = fromAirport;
+    const tempSearch = fromSearch;
+    setFromAirport(toAirport);
+    setFromSearch(toSearch);
+    setToAirport(tempAirport);
+    setToSearch(tempSearch);
   };
 
   return (
@@ -91,17 +119,65 @@ const FlightBooking = () => {
       {/* Search Form */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="from">From</Label>
-          <div className="relative">
-            <Input
-              id="from"
-              placeholder="Delhi"
-              value={fromCity}
-              onChange={(e) => setFromCity(e.target.value)}
-              className="pl-10"
-            />
-            <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          </div>
+          <Label>From</Label>
+          <Popover open={fromOpen} onOpenChange={setFromOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={fromOpen}
+                className="w-full justify-between"
+              >
+                {fromAirport ? (
+                  <span className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    {fromAirport.code} - {fromAirport.city}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="w-4 h-4" />
+                    Select airport...
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start">
+              <Command>
+                <CommandInput 
+                  placeholder="Search airports..." 
+                  value={fromSearch}
+                  onValueChange={setFromSearch}
+                />
+                <CommandList>
+                  <CommandEmpty>No airports found.</CommandEmpty>
+                  <CommandGroup>
+                    {fromResults.map((airport) => (
+                      <CommandItem
+                        key={airport.code}
+                        value={airport.code}
+                        onSelect={() => {
+                          setFromAirport(airport);
+                          setFromSearch(airport.city);
+                          setFromOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            fromAirport?.code === airport.code ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <div className="flex flex-col">
+                          <span className="font-medium">{airport.code} - {airport.city}</span>
+                          <span className="text-xs text-muted-foreground">{airport.name}</span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="flex items-end justify-center">
@@ -116,17 +192,65 @@ const FlightBooking = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="to">To</Label>
-          <div className="relative">
-            <Input
-              id="to"
-              placeholder="Mumbai"
-              value={toCity}
-              onChange={(e) => setToCity(e.target.value)}
-              className="pl-10"
-            />
-            <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          </div>
+          <Label>To</Label>
+          <Popover open={toOpen} onOpenChange={setToOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={toOpen}
+                className="w-full justify-between"
+              >
+                {toAirport ? (
+                  <span className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    {toAirport.code} - {toAirport.city}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="w-4 h-4" />
+                    Select airport...
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start">
+              <Command>
+                <CommandInput 
+                  placeholder="Search airports..." 
+                  value={toSearch}
+                  onValueChange={setToSearch}
+                />
+                <CommandList>
+                  <CommandEmpty>No airports found.</CommandEmpty>
+                  <CommandGroup>
+                    {toResults.map((airport) => (
+                      <CommandItem
+                        key={airport.code}
+                        value={airport.code}
+                        onSelect={() => {
+                          setToAirport(airport);
+                          setToSearch(airport.city);
+                          setToOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            toAirport?.code === airport.code ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <div className="flex flex-col">
+                          <span className="font-medium">{airport.code} - {airport.city}</span>
+                          <span className="text-xs text-muted-foreground">{airport.name}</span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="space-y-2">
