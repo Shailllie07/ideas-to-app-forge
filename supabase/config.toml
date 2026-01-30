@@ -1,7 +1,1 @@
-project_id = "vhaqmwyinixyigziqoqf"
-
-# All functions now require JWT authentication by default
-# This prevents unauthorized access and API abuse
-
-[functions.flight-search]
-verify_jwt = true
+project_id = "fitrqeytagmnlrslpyta"
