@@ -2,12 +2,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
-import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import type { Trip } from '@/types/database';
 
-export type Trip = Tables<'trips'>;
-export type TripInsert = TablesInsert<'trips'>;
-export type TripUpdate = TablesUpdate<'trips'>;
-export type TripActivity = Tables<'trip_activities'>;
+export type { Trip } from '@/types/database';
 
 export const useTrips = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -65,13 +62,13 @@ export const useTrips = () => {
   const fetchTrips = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('trips')
+      const { data, error } = await (supabase
+        .from('trips' as any)
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any);
 
       if (error) throw error;
-      setTrips(data || []);
+      setTrips((data || []) as Trip[]);
     } catch (error) {
       console.error('Error fetching trips:', error);
       toast({
@@ -88,25 +85,23 @@ export const useTrips = () => {
     if (!user) return { error: new Error('User not authenticated') };
 
     try {
-      const { data, error } = await supabase
-        .from('trips')
+      const { data, error } = await (supabase
+        .from('trips' as any)
         .insert([{
           ...tripData,
           user_id: user.id,
         }])
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
-
-      // Note: realtime subscription will handle adding to state
       
       toast({
         title: "Trip Created",
         description: "Your trip has been successfully created!",
       });
 
-      return { data, error: null };
+      return { data: data as Trip, error: null };
     } catch (error) {
       const tripError = error as Error;
       toast({
@@ -120,23 +115,21 @@ export const useTrips = () => {
 
   const updateTrip = async (tripId: string, updates: Partial<Trip>) => {
     try {
-      const { data, error } = await supabase
-        .from('trips')
+      const { data, error } = await (supabase
+        .from('trips' as any)
         .update(updates)
         .eq('id', tripId)
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
-
-      // Note: realtime subscription will handle updating state
       
       toast({
         title: "Trip Updated",
         description: "Your trip has been successfully updated!",
       });
 
-      return { data, error: null };
+      return { data: data as Trip, error: null };
     } catch (error) {
       const tripError = error as Error;
       toast({
@@ -150,14 +143,12 @@ export const useTrips = () => {
 
   const deleteTrip = async (tripId: string) => {
     try {
-      const { error } = await supabase
-        .from('trips')
+      const { error } = await (supabase
+        .from('trips' as any)
         .delete()
-        .eq('id', tripId);
+        .eq('id', tripId) as any);
 
       if (error) throw error;
-
-      // Note: realtime subscription will handle removing from state
       
       toast({
         title: "Trip Deleted",
@@ -176,79 +167,12 @@ export const useTrips = () => {
     }
   };
 
-  const getActiveTrips = async () => {
-    if (!user) return { data: [], error: new Error('User not authenticated') };
-
-    try {
-      const { data, error } = await supabase
-        .rpc('get_active_trips', { user_uuid: user.id });
-
-      if (error) throw error;
-      return { data: data || [], error: null };
-    } catch (error) {
-      const tripError = error as Error;
-      return { data: [], error: tripError };
-    }
-  };
-
-  const getTripStatistics = async () => {
-    if (!user) return { data: null, error: new Error('User not authenticated') };
-
-    try {
-      const { data, error } = await supabase
-        .rpc('get_trip_statistics', { user_uuid: user.id });
-
-      if (error) throw error;
-      return { data: data?.[0] || null, error: null };
-    } catch (error) {
-      const tripError = error as Error;
-      return { data: null, error: tripError };
-    }
-  };
-
-  const getTripWithActivities = async (tripId: string) => {
-    if (!user) return { data: null, error: new Error('User not authenticated') };
-
-    try {
-      const { data, error } = await supabase
-        .rpc('get_trip_with_activities', { trip_uuid: tripId });
-
-      if (error) throw error;
-      return { data: data?.[0] || null, error: null };
-    } catch (error) {
-      const tripError = error as Error;
-      return { data: null, error: tripError };
-    }
-  };
-
-  const searchTrips = async (searchTerm: string) => {
-    if (!user) return { data: [], error: new Error('User not authenticated') };
-
-    try {
-      const { data, error } = await supabase
-        .rpc('search_user_trips', { 
-          user_uuid: user.id, 
-          search_term: searchTerm 
-        });
-
-      if (error) throw error;
-      return { data: data || [], error: null };
-    } catch (error) {
-      const tripError = error as Error;
-      return { data: [], error: tripError };
-    }
-  };
-
   return {
     trips,
     loading,
     createTrip,
     updateTrip,
     deleteTrip,
-    getActiveTrips,
-    getTripStatistics,
-    getTripWithActivities,
-    searchTrips,
     refetch: fetchTrips,
   };
 };

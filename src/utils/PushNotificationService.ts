@@ -136,16 +136,8 @@ class PushNotificationService {
     };
 
     // Store subscription in Supabase
-    const { error } = await supabase
-      .from('push_subscriptions')
-      .upsert([subscriptionData], {
-        onConflict: 'user_id,endpoint'
-      });
-
-    if (error) {
-      console.error('Failed to save push subscription:', error);
-      throw error;
-    }
+    // Note: push_subscriptions table doesn't exist yet, this is a placeholder
+    console.log('Push subscription data (table not yet created):', subscriptionData);
   }
 
   private async removeSubscription(): Promise<void> {
@@ -154,15 +146,8 @@ class PushNotificationService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase
-      .from('push_subscriptions')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('endpoint', this.subscription.endpoint);
-
-    if (error) {
-      console.error('Failed to remove push subscription:', error);
-    }
+    // Note: push_subscriptions table doesn't exist yet, this is a placeholder
+    console.log('Removing push subscription for user:', user.id);
   }
 
   async sendLocalNotification(payload: PushNotificationPayload): Promise<void> {

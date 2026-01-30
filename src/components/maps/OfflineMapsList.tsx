@@ -14,11 +14,11 @@ import { useAuth } from "@/hooks/useAuth";
 interface OfflineMap {
   id: string;
   region_name: string;
-  region_bounds: any;
-  download_date: string;
-  file_size: number;
-  map_style: string;
-  is_active: boolean;
+  region_id: string;
+  size_bytes: number;
+  download_status: string;
+  last_updated: string;
+  created_at: string;
 }
 
 const OfflineMapsList = () => {
@@ -58,30 +58,12 @@ const OfflineMapsList = () => {
     { name: "West Bengal", bounds: [85.8177, 21.4560, 89.9120, 27.2316] },
     { name: "Odisha", bounds: [81.3270, 17.7800, 87.5333, 22.5667] },
     
-    // Northeastern States
-    { name: "Assam", bounds: [89.6380, 24.1270, 96.0258, 28.2180] },
-    { name: "Arunachal Pradesh", bounds: [91.6080, 26.6330, 97.4093, 29.4500] },
-    { name: "Nagaland", bounds: [93.3257, 25.2044, 95.7739, 27.0444] },
-    { name: "Manipur", bounds: [93.0313, 23.8372, 94.7858, 25.6831] },
-    { name: "Mizoram", bounds: [92.1544, 21.9471, 93.3906, 24.5311] },
-    { name: "Tripura", bounds: [91.0985, 22.9569, 92.6739, 24.5325] },
-    { name: "Meghalaya", bounds: [89.8336, 25.0070, 92.7985, 26.1146] },
-    { name: "Sikkim", bounds: [88.0626, 27.0440, 88.9068, 28.1356] },
-    
     // Southern States
     { name: "Karnataka", bounds: [74.0894, 11.5945, 78.5885, 18.4574] },
     { name: "Kerala", bounds: [74.8520, 8.2972, 77.4168, 12.7800] },
     { name: "Tamil Nadu", bounds: [76.2297, 8.0883, 80.3436, 13.5608] },
     { name: "Andhra Pradesh", bounds: [76.7549, 12.6200, 84.7750, 19.9078] },
     { name: "Telangana", bounds: [77.2749, 15.7942, 81.7749, 19.9178] },
-    
-    // Union Territories & Special Regions
-    { name: "Andaman and Nicobar Islands", bounds: [92.2336, 6.7450, 94.2613, 13.6830] },
-    { name: "Lakshadweep", bounds: [71.6167, 8.0000, 74.1333, 12.3833] },
-    { name: "Puducherry", bounds: [79.6325, 11.7401, 79.8874, 12.0700] },
-    { name: "Chandigarh", bounds: [76.6574, 30.6315, 76.8600, 30.7594] },
-    { name: "Dadra and Nagar Haveli", bounds: [72.8380, 20.0711, 73.1380, 20.4311] },
-    { name: "Daman and Diu", bounds: [72.7833, 20.3833, 72.9000, 20.4333] }
   ];
 
   useEffect(() => {
@@ -90,14 +72,14 @@ const OfflineMapsList = () => {
 
   const fetchOfflineMaps = async () => {
     try {
-      const { data, error } = await supabase
-        .from('offline_maps')
+      const { data, error } = await (supabase
+        .from('offline_maps' as any)
         .select('*')
-        .eq('is_active', true)
-        .order('download_date', { ascending: false });
+        .eq('download_status', 'completed')
+        .order('created_at', { ascending: false }) as any);
 
       if (error) throw error;
-      setMaps(data || []);
+      setMaps((data || []) as OfflineMap[]);
     } catch (error) {
       toast({
         title: "Error",
@@ -116,15 +98,15 @@ const OfflineMapsList = () => {
       // Simulate map download process
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const { error } = await supabase
-        .from('offline_maps')
+      const { error } = await (supabase
+        .from('offline_maps' as any)
         .insert({
           user_id: user?.id,
           region_name: regionName,
-          region_bounds: { bounds },
-          file_size: Math.floor(Math.random() * 100000000) + 10000000, // Random file size
-          map_style: mapStyle
-        });
+          region_id: regionName.toLowerCase().replace(/\s+/g, '-'),
+          size_bytes: Math.floor(Math.random() * 100000000) + 10000000,
+          download_status: 'completed'
+        }) as any);
 
       if (error) throw error;
       
@@ -151,10 +133,10 @@ const OfflineMapsList = () => {
 
   const deleteMap = async (mapId: string) => {
     try {
-      const { error } = await supabase
-        .from('offline_maps')
+      const { error } = await (supabase
+        .from('offline_maps' as any)
         .delete()
-        .eq('id', mapId);
+        .eq('id', mapId) as any);
 
       if (error) throw error;
       
@@ -182,7 +164,7 @@ const OfflineMapsList = () => {
   };
 
   const getTotalStorage = () => {
-    return maps.reduce((total, map) => total + (map.file_size || 0), 0);
+    return maps.reduce((total, map) => total + (map.size_bytes || 0), 0);
   };
 
   const filteredRegions = availableRegions.filter(region =>
@@ -325,9 +307,9 @@ const OfflineMapsList = () => {
                     <div>
                       <h4 className="font-medium">{map.region_name}</h4>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{formatFileSize(map.file_size || 0)}</span>
-                        <span>Downloaded {new Date(map.download_date).toLocaleDateString()}</span>
-                        <Badge variant="outline">{map.map_style}</Badge>
+                        <span>{formatFileSize(map.size_bytes || 0)}</span>
+                        <span>Downloaded {new Date(map.created_at).toLocaleDateString()}</span>
+                        <Badge variant="outline">{mapStyle}</Badge>
                       </div>
                     </div>
                   </div>

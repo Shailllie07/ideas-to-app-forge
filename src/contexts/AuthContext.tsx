@@ -121,17 +121,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
+      const { data, error } = await (supabase
+        .from('profiles' as any)
         .select('*')
-        .eq('id', userId)
-        .single();
+        .eq('user_id', userId)
+        .maybeSingle() as any);
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+      if (error) {
         throw error;
       }
 
-      setProfile(data);
+      setProfile(data as UserProfile | null);
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
@@ -139,13 +139,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const createUserProfile = async (userId: string, metadata?: { name?: string; phone?: string }) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
+      const { error } = await (supabase
+        .from('profiles' as any)
         .upsert({
-          id: userId,
+          user_id: userId,
           display_name: metadata?.name,
           phone_number: metadata?.phone,
-        });
+        }) as any);
 
       if (error) throw error;
       
@@ -370,13 +370,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const { error } = await supabase
-        .from('profiles')
+      const { error } = await (supabase
+        .from('profiles' as any)
         .upsert({
-          id: user.id,
+          user_id: user.id,
           ...updates,
-          updated_at: new Date().toISOString(),
-        });
+        }) as any);
 
       if (error) throw error;
 

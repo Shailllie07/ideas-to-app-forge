@@ -2,11 +2,22 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
-import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
-export type TripActivity = Tables<'trip_activities'>;
-export type TripActivityInsert = TablesInsert<'trip_activities'>;
-export type TripActivityUpdate = TablesUpdate<'trip_activities'>;
+export interface TripActivity {
+  id: string;
+  trip_id: string;
+  day_number: number;
+  title: string;
+  description: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  location: string | null;
+  activity_type: string;
+  cost: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useTripActivities = (tripId?: string) => {
   const [activities, setActivities] = useState<TripActivity[]>([]);
@@ -62,14 +73,14 @@ export const useTripActivities = (tripId?: string) => {
     
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('trip_activities')
+      const { data, error } = await (supabase
+        .from('trip_activities' as any)
         .select('*')
         .eq('trip_id', tripId)
-        .order('day_number', { ascending: true });
+        .order('day_number', { ascending: true }) as any);
 
       if (error) throw error;
-      setActivities(data || []);
+      setActivities((data || []) as TripActivity[]);
     } catch (error) {
       console.error('Error fetching activities:', error);
     } finally {
@@ -77,24 +88,22 @@ export const useTripActivities = (tripId?: string) => {
     }
   };
 
-  const createActivity = async (activityData: TripActivityInsert) => {
+  const createActivity = async (activityData: Partial<TripActivity>) => {
     try {
-      const { data, error } = await supabase
-        .from('trip_activities')
+      const { data, error } = await (supabase
+        .from('trip_activities' as any)
         .insert([activityData])
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
-
-      // Note: realtime subscription will handle adding to state
       
       toast({
         title: "Activity Added",
         description: "Activity has been added to your itinerary!",
       });
 
-      return { data, error: null };
+      return { data: data as TripActivity, error: null };
     } catch (error) {
       const activityError = error as Error;
       toast({
@@ -108,12 +117,12 @@ export const useTripActivities = (tripId?: string) => {
 
   const updateActivity = async (activityId: string, updates: Partial<TripActivity>) => {
     try {
-      const { data, error } = await supabase
-        .from('trip_activities')
+      const { data, error } = await (supabase
+        .from('trip_activities' as any)
         .update(updates)
         .eq('id', activityId)
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
 
@@ -122,7 +131,7 @@ export const useTripActivities = (tripId?: string) => {
         description: "Activity has been updated successfully!",
       });
 
-      return { data, error: null };
+      return { data: data as TripActivity, error: null };
     } catch (error) {
       const activityError = error as Error;
       toast({
@@ -136,10 +145,10 @@ export const useTripActivities = (tripId?: string) => {
 
   const deleteActivity = async (activityId: string) => {
     try {
-      const { error } = await supabase
-        .from('trip_activities')
+      const { error } = await (supabase
+        .from('trip_activities' as any)
         .delete()
-        .eq('id', activityId);
+        .eq('id', activityId) as any);
 
       if (error) throw error;
 

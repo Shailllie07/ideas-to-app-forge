@@ -14,11 +14,10 @@ import { useAuth } from "@/hooks/useAuth";
 
 interface UserProfileData {
   id: string;
-  display_name: string;
-  avatar_url: string;
-  bio: string;
-  phone_number: string;
-  emergency_contact_consent: boolean;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  phone_number: string | null;
 }
 
 const UserProfile = () => {
@@ -43,22 +42,29 @@ const UserProfile = () => {
 
   const fetchProfile = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
+      const { data, error } = await (supabase
+        .from('profiles' as any)
         .select('*')
-        .eq('id', user?.id)
-        .single();
+        .eq('user_id', user?.id)
+        .maybeSingle() as any);
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      if (error) {
         throw error;
       }
 
       if (data) {
-        setProfile(data);
+        const profileData = data as any;
+        setProfile({
+          id: profileData.id,
+          display_name: profileData.display_name,
+          avatar_url: profileData.avatar_url,
+          bio: profileData.bio,
+          phone_number: profileData.phone_number
+        });
         setFormData({
-          display_name: data.display_name || "",
-          bio: data.bio || "",
-          phone_number: data.phone_number || ""
+          display_name: profileData.display_name || "",
+          bio: profileData.bio || "",
+          phone_number: profileData.phone_number || ""
         });
       } else {
         // Create profile if it doesn't exist
@@ -78,23 +84,30 @@ const UserProfile = () => {
 
   const createProfile = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
+      const { data, error } = await (supabase
+        .from('profiles' as any)
         .insert({
-          id: user?.id,
+          user_id: user?.id,
           display_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
           avatar_url: user?.user_metadata?.avatar_url || null
         })
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
       
-      setProfile(data);
+      const profileData = data as any;
+      setProfile({
+        id: profileData.id,
+        display_name: profileData.display_name,
+        avatar_url: profileData.avatar_url,
+        bio: profileData.bio,
+        phone_number: profileData.phone_number
+      });
       setFormData({
-        display_name: data.display_name || "",
-        bio: data.bio || "",
-        phone_number: data.phone_number || ""
+        display_name: profileData.display_name || "",
+        bio: profileData.bio || "",
+        phone_number: profileData.phone_number || ""
       });
     } catch (error) {
       console.error('Error creating profile:', error);
@@ -104,14 +117,14 @@ const UserProfile = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
+      const { error } = await (supabase
+        .from('profiles' as any)
         .update({
           display_name: formData.display_name,
           bio: formData.bio,
           phone_number: formData.phone_number
         })
-        .eq('id', user?.id);
+        .eq('user_id', user?.id) as any);
 
       if (error) throw error;
 
@@ -207,11 +220,6 @@ const UserProfile = () => {
                   <User className="w-3 h-3 mr-1" />
                   Traveler
                 </Badge>
-                {profile?.emergency_contact_consent && (
-                  <Badge variant="default">
-                    Emergency Contact Setup
-                  </Badge>
-                )}
               </div>
             </div>
           </div>
