@@ -14,7 +14,269 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          booking_date: string | null
+          booking_reference: string | null
+          booking_type: string
+          created_at: string
+          currency: string | null
+          details: Json | null
+          id: string
+          price: number | null
+          provider: string | null
+          status: string | null
+          travel_date: string | null
+          trip_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          booking_date?: string | null
+          booking_reference?: string | null
+          booking_type: string
+          created_at?: string
+          currency?: string | null
+          details?: Json | null
+          id?: string
+          price?: number | null
+          provider?: string | null
+          status?: string | null
+          travel_date?: string | null
+          trip_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          booking_date?: string | null
+          booking_reference?: string | null
+          booking_type?: string
+          created_at?: string
+          currency?: string | null
+          details?: Json | null
+          id?: string
+          price?: number | null
+          provider?: string | null
+          status?: string | null
+          travel_date?: string | null
+          trip_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emergency_contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_primary: boolean | null
+          is_verified: boolean | null
+          name: string
+          notes: string | null
+          phone_number: string
+          relationship: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          is_verified?: boolean | null
+          name: string
+          notes?: string | null
+          phone_number: string
+          relationship?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          is_verified?: boolean | null
+          name?: string
+          notes?: string | null
+          phone_number?: string
+          relationship?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          action_url: string | null
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          priority: string | null
+          title: string
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          priority?: string | null
+          title: string
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          priority?: string | null
+          title?: string
+          type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      offline_maps: {
+        Row: {
+          created_at: string
+          download_status: string | null
+          id: string
+          last_updated: string | null
+          region_id: string
+          region_name: string
+          size_bytes: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          download_status?: string | null
+          id?: string
+          last_updated?: string | null
+          region_id: string
+          region_name: string
+          size_bytes?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          download_status?: string | null
+          id?: string
+          last_updated?: string | null
+          region_id?: string
+          region_name?: string
+          size_bytes?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          blood_type: string | null
+          created_at: string
+          display_name: string | null
+          emergency_notes: string | null
+          id: string
+          medical_allergies: string[] | null
+          medical_conditions: string[] | null
+          medical_medications: string[] | null
+          phone_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          blood_type?: string | null
+          created_at?: string
+          display_name?: string | null
+          emergency_notes?: string | null
+          id?: string
+          medical_allergies?: string[] | null
+          medical_conditions?: string[] | null
+          medical_medications?: string[] | null
+          phone_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          blood_type?: string | null
+          created_at?: string
+          display_name?: string | null
+          emergency_notes?: string | null
+          id?: string
+          medical_allergies?: string[] | null
+          medical_conditions?: string[] | null
+          medical_medications?: string[] | null
+          phone_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trips: {
+        Row: {
+          budget: number | null
+          created_at: string
+          destination: string
+          end_date: string
+          id: string
+          itinerary: Json | null
+          notes: string | null
+          start_date: string
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget?: number | null
+          created_at?: string
+          destination: string
+          end_date: string
+          id?: string
+          itinerary?: Json | null
+          notes?: string | null
+          start_date: string
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget?: number | null
+          created_at?: string
+          destination?: string
+          end_date?: string
+          id?: string
+          itinerary?: Json | null
+          notes?: string | null
+          start_date?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

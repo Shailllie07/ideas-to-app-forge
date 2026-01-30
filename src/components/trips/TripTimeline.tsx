@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Clock, Users, FileText, Share2, Edit, MoreVertical, Plus } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useTrips } from "@/hooks/useTrips";
+import { useTrips, Trip } from "@/hooks/useTrips";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const TripTimeline = () => {
@@ -11,8 +11,7 @@ const TripTimeline = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "confirmed":
-      case "planning":
+      case "planned":
         return "bg-primary text-primary-foreground";
       case "ongoing":
         return "bg-accent text-accent-foreground";
@@ -27,10 +26,8 @@ const TripTimeline = () => {
 
   const getStatusDisplay = (status: string) => {
     switch (status) {
-      case "planning":
-        return "Planning";
-      case "confirmed":
-        return "Upcoming";
+      case "planned":
+        return "Planned";
       case "ongoing":
         return "Ongoing";
       case "completed":
@@ -125,12 +122,12 @@ const TripTimeline = () => {
               {/* Timeline dot */}
               <div className={`flex-shrink-0 w-16 h-16 rounded-full border-4 border-background shadow-lg flex items-center justify-center ${
                 trip.status === "completed" ? "bg-accent" : 
-                trip.status === "confirmed" || trip.status === "planning" ? "bg-gradient-to-r from-primary to-primary-glow" :
+                trip.status === "planned" ? "bg-gradient-to-r from-primary to-primary-glow" :
                 "bg-muted"
               }`}>
                 <Calendar className={`w-6 h-6 ${
                   trip.status === "completed" ? "text-accent-foreground" : 
-                  trip.status === "confirmed" || trip.status === "planning" ? "text-primary-foreground" :
+                  trip.status === "planned" ? "text-primary-foreground" :
                   "text-muted-foreground"
                 }`} />
               </div>
@@ -203,15 +200,12 @@ const TripTimeline = () => {
                     </div>
                   )}
 
-                  {/* AI Generated Itinerary highlights */}
-                  {trip.ai_generated_itinerary && (
+                  {/* Itinerary */}
+                  {trip.itinerary && typeof trip.itinerary === 'object' && Object.keys(trip.itinerary).length > 0 && (
                     <div>
-                      <div className="text-sm font-medium mb-2">AI Itinerary:</div>
+                      <div className="text-sm font-medium mb-2">Itinerary:</div>
                       <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                        {JSON.stringify(trip.ai_generated_itinerary).length > 100 
-                          ? "AI-powered itinerary available" 
-                          : JSON.stringify(trip.ai_generated_itinerary)
-                        }
+                        Itinerary details available
                       </div>
                     </div>
                   )}
@@ -222,7 +216,7 @@ const TripTimeline = () => {
                       <FileText className="w-4 h-4 mr-2" />
                       View Details
                     </Button>
-                    {(trip.status === "planning" || trip.status === "confirmed") && (
+                    {trip.status === "planned" && (
                       <Button size="sm" className="bg-gradient-to-r from-primary to-primary-glow">
                         <Edit className="w-4 h-4 mr-2" />
                         Manage Trip
